@@ -1,0 +1,37 @@
+{% load static %}
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+  <title>{% block title %}{% endblock %}</title>
+  <style>
+    body {
+      background-color: #f8f9fa
+    }
+  </style>
+  {% block style %}{% endblock %}
+</head>
+<body>
+  {% include 'navbar.html' %}
+  <div class="container">
+    {% if messages %}
+      {% for message in messages %}
+          <div class="{{ message|bootstrap_message_classes }} alert-dismissable">
+              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>
+              {{ message }}
+          </div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+    {% include "footer.html" %}
+  </div>
+  {% block script %}{% endblock %}
+</body>
+</html>

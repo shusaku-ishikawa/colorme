@@ -115,6 +115,34 @@ class WowmaItemModel:
             self.display_stock_segment = register_stock_element.find('displayStockSegment')
             self.display_stock_threshold = register_stock_element.find('displayStockThreshold')
             self.choices_stock_horizontal_item_name = register_stock_element.find('choicesStockHorizontalItemName')
+            self.choices_stock_horizontals = [self.ChoicesStockHorizontal(choices_stock_horizontal) for choices_stock_horizontal in register_stock_element.findall('choicesStockHorizontals')]
+            self.choices_stock_vertical_item_name = register_stock_element.find('choicesStockVerticalItemName')
+            self.choices_stock_verticals = [self.ChoicesStockVertical(choices_stock_vertical) for choices_stock_vertical in register_stock_element.findall('choicesStockVerticals')]
+            self.choices_stocks = [self.ChoicesStock(choices_stock) for choices_stock in register_stock_element.findall('choicesStocks')]
+            self.choices_stock_upper_description = register_stock_element.find('choicesStockUpperDescription')
+            self.choices_stock_lower_description = register_stock_element.find('choicesStockLowerDescription')
+            self.display_choices_stock_segment = register_stock_element.find('displayChoicesStockSegment')
+            self.display_chioces_stock_threshold = register_stock_element.find('displayChoicesStockThreshold')
+            self.display_backorder_message = register_stock_element.find('displayBackorderMessage')
+
+        class ChoicesStockHorizontal:
+            def __init__(self, choices_stock_horiontal_element):
+                self.choices_stock_horizontal_code = choices_stock_horiontal_element.find('choicesStockHorizontalCode')
+                self.choices_stock_horizontal_name = choices_stock_horiontal_element.find('choicesStockHorizontalName')
+                self.choices_stock_horizontal_seq = choices_stock_horiontal_element.find('choicesStockHorizontalSeq')
+        class ChoicesStockVertical:        
+            def __init__(self, choices_stock_vertical_element):
+                self.choices_stock_vertical_code = choices_stock_horiontal_element.find('choicesStockVerticalCode')
+                self.choices_stock_vertical_name = choices_stock_horiontal_element.find('choicesStockVertialName')
+                self.choices_stock_vertical_seq = choices_stock_horiontal_element.find('choicesStockVerticalSeq')
+        class ChoicesStock:
+            def __init__(self, choices_stock_element):
+                self.choices_stock_horizontal_code = choices_stock_element.find('choicesStockHorizontalCode')
+                self.choices_stock_vertical_code = choices_stock_element.find('choicesStockVerticalCode')
+                self.choices_stock_count = choices_stock_element.find('choicesStockCount')
+                self.choices_stock_shipping_day_id = choices_stock_element.find('choicesStockShippingDayId')
+                self.chioces_stock_shipping_day_disp_txt = choices_stock_element.find('choicesStockShippingDayDispTxt')
+
 
             
 class WowmaApi:
@@ -147,8 +175,8 @@ class WowmaApi:
             print(f'{error_code} {error_message}')
         else:
             items = response_parsed.findall('./searchResult/resultItems')
-            for item in items:
-                print(item)
+            items_list = [self.WowmaItemModel(item) for item in items]
+            print(item_list) 
             print(f'{len(items)} 件取得しました')
         
 wowma_api = WowmaApi()

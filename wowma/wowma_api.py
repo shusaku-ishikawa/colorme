@@ -1,11 +1,9 @@
 import requests
 from urllib.parse import urlencode
 import xml.etree.ElementTree as ET
-from .models import WowmaItem
-
-API_STATUS_SUCCESS = '0'
-API_STATUS_ERROR = '1'
-            
+from .models import WowmaItem, WowmaItemSearchResult
+from .enums import *
+          
 class WowmaApi:
     application_key = '28c3dd90e158d12967129fecf1010e5c63240714cd68683dcf66d44fc78f9dcc'
     shop_id = '44154399'
@@ -28,15 +26,7 @@ class WowmaApi:
         url = f'{__class__.endpoint}searchItemInfos?{query_string}'
         response = requests.get(url, headers = self._get_headers())
         response_parsed = ET.fromstring(response.content)
-        status = response_parsed.find('./result/status').text
-        if status != API_STATUS_SUCCESS:
-            # error
-            error_code = response_parsed.find('./result/error/code').text
-            error_message = response_parsed.find('./result/error/message').text
-            raise Exception(f'{error_code} {error_message}')
-        else:
-            items = response_parsed.findall('./searchResult/resultItems')
-            return [WowmaItem(item) for item in items]
-           
+        return WowmaItemSearchResult(response_parsed, page)
+        
 wowma_api = WowmaApi()
 

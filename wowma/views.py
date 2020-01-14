@@ -4,23 +4,21 @@ from .wowma_api import wowma_api
 
 class DashBoard(TemplateView):
     template_name = 'wowma_dashboard.html'
-    
+    def set_pagination(self, context, current_page, max_count):
+        context['current_page'] = current_page
+        context[''] 
     def get(self, request, *args, **kwargs):
         limit = 10
-        if not 'offset' in request.GET:
-            offset = 0
+        
+        if not 'page' in request.GET:
+            page = 1
         else:
-            offset = request.GET.get('offset')
+            page = request.GET.get('page')
             if not offset.isdecimal():
                 pass
             else:
-                offset = int(offset)
+                page = int(page)
         context = self.get_context_data(**kwargs)
-        try:
-            object_list = wowma_api.search_item_info(limit, offset)
-        except Exception as e:
-            print(e)
-        else:
-            context['object_list'] = object_list
-        
+        context['search_result'] = wowma_api.search_item_info(limit, (page - 1) * limit)
+       
         return self.render_to_response(context)

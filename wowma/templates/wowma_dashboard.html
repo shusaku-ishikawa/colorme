@@ -1,25 +1,98 @@
 {% extends 'base_template.html' %}
+{% load wowmafilters %}
+{% load humanize %}
 {% block title %}
   Wowma Dashboard
 {% endblock %}
+
+{% block style %}
+  <style>
+    .container {
+      margin-left: 0;
+      margin-right:0;
+      max-width: 100%!important;
+    }
+    td {
+      white-space: nowrap;
+    }
+    img.item-thumbnail {
+      width: 100px;
+      height: auto;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
-  {% if object_list %}
-    <table class="table table-bordered">
+  {% if search_result.items %}
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
       <thead class="thead-dark">
+        <th>
+          Lot number
+        </th>
+        <th>
+          Image
+        </th>
         <th>
           Item name
         </th>
+        <th>
+          Item management id
+        </th>
+        <th>
+          Item management name
+        </th>
+        <th>
+          Item code
+        </th>
+        <th>
+          Item price
+        </th>
+        <th>
+          Sell method segment
+        </th>
+        <th>
+          Description
+        </th>
+        
       </thead>
       <tbody>
-        {% for object in object_list %}
+        {% for object in search_result.items %}
           <tr>
+            <td>
+              {{ object.lot_number }}
+            </td>
+            <td>
+              <img class="item-thumbnail" src="{{ object.images.0.image_url }}">
+            </td>
             <td>
               {{ object.item_name }}
             </td>
+            <td>
+              {{ object.item_management_id | default_if_none:'-' }}
+            </td>
+            <td>
+              {{ object.item_management_name | default_if_none:'-' }}
+            </td>
+            <td>
+              {{ object.item_code }}
+            </td>
+            <td>
+              ¥{{ object.item_price | intcomma }}
+            </td>
+            <td>
+              {{ object.sell_method_segment | display_sell_method:'' }}
+            </td>
+            <td>
+              {{ object.description | safe }}
+            </td>
+            
           </tr>
         {% endfor %}
       </tbody>
     </table>
+  </div>
   {% endif %}
+  {% include 'wowma_dashboard_pagination.html' %}
 {% endblock %}
 

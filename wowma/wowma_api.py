@@ -8,6 +8,8 @@ class WowmaApi:
     application_key = '28c3dd90e158d12967129fecf1010e5c63240714cd68683dcf66d44fc78f9dcc'
     shop_id = '44154399'
     endpoint = 'https://api.manager.wowma.jp/wmshopapi/'
+    limit = 10
+
     def __init__(self):
         pass
     def _get_headers(self):
@@ -16,10 +18,11 @@ class WowmaApi:
             'Authorization': f'Bearer {__class__.application_key}'
         }
     
-    def search_item_info(self, limit, offset):
+    def search_item_info(self, page):
+        offset = (page - 1) * __class__.limit
         parameters = {
             'shopId': __class__.shop_id,
-            'totalCount': limit,
+            'totalCount': __class__.limit,
             'startCount': offset
         }
         query_string = urlencode(parameters)

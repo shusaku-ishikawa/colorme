@@ -6,7 +6,7 @@ class DashBoard(TemplateView):
     template_name = 'wowma_dashboard.html'
     def set_pagination(self, context, current_page, max_count):
         context['current_page'] = current_page
-        context[''] 
+         
     def get(self, request, *args, **kwargs):
         limit = 10
         
@@ -14,11 +14,11 @@ class DashBoard(TemplateView):
             page = 1
         else:
             page = request.GET.get('page')
-            if not offset.isdecimal():
+            if not page.isdecimal():
                 pass
             else:
                 page = int(page)
         context = self.get_context_data(**kwargs)
-        context['search_result'] = wowma_api.search_item_info(limit, (page - 1) * limit)
+        context['search_result'] = wowma_api.search_item_info(page)
        
         return self.render_to_response(context)

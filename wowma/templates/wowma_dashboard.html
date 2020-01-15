@@ -23,7 +23,9 @@
 {% endblock %}
 
 {% block content %}
-  {% if search_result.items %}
+  {% if search_result.error %}
+  {{ search_result.error.code }} {{ search_result.error.message }}
+  {% else %}
   <div class="table-responsive">
     <table class="table table-bordered table-striped">
       <thead class="thead-dark">
@@ -81,7 +83,7 @@
               ¥{{ object.item_price | intcomma }}
             </td>
             <td>
-              {{ object.sell_method_segment | display_sell_method:'' }}
+              {{ object.sell_method_segment | display_sell_method }}
             </td>
             <td>
               {{ object.description | safe }}
@@ -92,7 +94,9 @@
       </tbody>
     </table>
   </div>
+
   {% endif %}
   {% include 'wowma_dashboard_pagination.html' %}
+    
 {% endblock %}
 

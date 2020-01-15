@@ -148,25 +148,55 @@ class WowmaItemSearchResult(object):
     def __init__(self, response_parsed, page):
         self.status = response_parsed.find('./result/status').text
         if self.status != API_STATUS_SUCCESS:
-            self.error_code = response_parsed.find('./result/error/code').text
-            self.error_message = response_parsed.find('./result/error/message').text
+            self.error = self.Error(response_parsed.find('./result/error')) 
+            self.pagination = self.Pagination(5, page, 110)
+            print('error')          
         else:
             result_count = response_parsed.find('./searchResult/resultCount').text
             max_count = response_parsed.find('./searchResult/maxCount').text
             self.pagination = self.Pagination(int(result_count), int(page), int(max_count))            
             self.items = [WowmaItem(item) for item in response_parsed.findall('./searchResult/resultItems')]
-    
+    class Error(object):
+        def __init__(self, error_element):
+            self.code = error_element.find('code').text
+            self.message = error_element.find('message').text
+
     class Pagination(object):
+        max_display_pages = 10
         def __init__(self, items_per_page, current_page, max_count):
             self.item_per_page = items_per_page
             self.current_page = current_page
             self.max_count = max_count
             self.total_pages = math.ceil(max_count / items_per_page)
-
+            self.init_display_list()
         @property
         def has_next(self):
             return self.total_pages > self.current_page
         @property
         def has_previous(self):
             return self.current_page > 1
-
+        @property
+        def first_index_hidden(self):
+            return self.display_list[0] != 1
+        @property
+        def last_index_hidden(self):
+            return self.display_list[len(self.display_list) - 1] != self.total_pages
+        
+        def init_display_list(self):
+            display_count = self.total_pages if self.total_pages < __class__.max_display_pages else __class__.max_display_pages
+            
+            if (display_count - 3) % 2 == 0:
+                left_offset = int((display_count - 3) / 2)
+                right_offset = int((display_count - 3) / 2)
+            else:
+                left_offset = int((display_count - 4) / 2)
+                right_offset = int((display_count - 2) / 2)
+                
+            if (self.current_page - left_offset) < 1:
+                print('margin')
+                margin = left_offset - (self.current_page - 2)
+                left_offset -= margin
+                right_offset += margin
+            
+            
+            self.display_list = [index for index in range(self.current_page - left_offset, self.current_page + right_offset + 1)]

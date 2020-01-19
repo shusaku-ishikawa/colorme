@@ -1,0 +1,30 @@
+{% extends 'base_template.html' %}
+
+{% load humanize %}
+{% block title %}
+  theBase authorize
+{% endblock %}
+
+{% block style %}
+  <style>
+    .container {
+      margin-left: 0;
+      margin-right:0;
+      max-width: 100%!important;
+    }
+    td {
+      white-space: nowrap;
+    }
+    img.item-thumbnail {
+      width: 100px;
+      height: auto;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  {% if error %}
+    {{ error }}
+  {% endif %}
+{% endblock %}
+

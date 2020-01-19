@@ -1,0 +1,155 @@
+{% extends 'thebase_base_template.html' %}
+{% load thebasefilters %}
+{% load humanize %}
+{% block title %}
+  BASE ITEMS
+{% endblock %}
+
+{% block thebase_content_style %}
+  <style>
+    div.table-responsive {
+      width: 100%;
+    }
+    table td {
+      white-space: nowrap;
+      
+    }
+    img.thumbnail {
+      width: 100px;
+    }
+  </style>
+{% endblock %}
+
+{% block thebase_content %}
+<form class="form-inline">
+  <input type="hidden" name="action" value="search">
+    <div class="form-group">
+    <label for="id-itemname">q(スペース区切り):</label>
+    <div class="ml-2 mr-2">
+      <input type="text" name="q" class="form-control" id="id-q" value="{{ q }}">
+    </div>
+  </div>
+    <button type="submit" class="btn btn-primary">検索</button>
+</form>
+{% if search_result.error %}
+  {{ search_result.error.code }} {{ search_result.error.message }}
+{% elif search_result.items != None %}
+  
+  {% if search_result.items|length == 0 %}
+    該当する商品が見つかりませんでした
+  {% else %}
+  {{ search_result.items|length }}件ヒットしました
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="thead-dark">
+        <th>
+          itemid
+        </th>
+        <th>
+          title
+        </th>
+        <th>
+          detail
+        </th>
+        <th>
+          price
+        </th>
+        <th>
+          proper_price
+        </th>
+        <th>
+          item_tax_type
+        </th>
+        <th>
+          stock
+        </th>
+        <th>
+          visible
+        </th>
+        <th>
+          list_order
+        </th>
+        <th>
+          identifier
+        </th>
+        <th>
+          img1_origin
+        </th>
+        <th>
+          modified
+        </th>
+        <th>
+          variations
+        </th>
+      </thead>
+      <tbody>
+        {% for object in search_result.items %}
+          <tr>
+            <td>
+              {{ object.item_id }}
+            </td>
+            <td>
+              {{ object.title }}
+            </td>
+            <td>
+              {% include 'thebase_searchitems_modal.html' with object=object %}
+              <button class="modal-open">open</button>
+            </td>
+            <td>
+              {{ object.price|intcomma }}
+            </td>
+            <td>
+              {{ object.proper_price|default_if_none:'-' }}
+            </td>
+            <td>
+              {{ object.item_tax_type }}
+            </td>
+            <td>
+              {{ object.stock }}
+            </td>
+            <td>
+              {{ object.visible_readable }}
+            </td>
+            <td>
+              {{ object.list_order }}
+            </td>
+            <td>
+              {{ object.identifier|default_if_none:'-' }}
+            </td>
+            <td>
+              <img src="{{ object.img1_origin }}" class="thumbnail">
+            </td>
+            <td>
+              {{ object.modified }}
+            </td>
+            <td>
+              <table class="table">
+                <thead>
+                  <th>variation</th>
+                  <th>stock</th>
+                </thead>
+                <tbody>
+                  {% for var in object.variations %}
+                  <tr>
+                    <td>
+                      {{ var.variation }}
+                    </td>
+                    <td>
+                      {{ var.variation_stock }}
+                    </td>
+                    
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </td>
+            
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% endif %}
+{% endblock %}
+

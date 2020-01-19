@@ -25,7 +25,7 @@ SECRET_KEY = 'i)m@dw896c!nj@ub9nm02yb3%f=mw4g88udhj3_%hp@3gr7sc#'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -39,10 +39,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'wowma',
-    'base',
+    'thebase',
     'core',
     'bootstrap4'
 ]
+AUTH_USER_MODEL = 'core.User'
+LOGIN_URL = 'core:login'
+LOGIN_REDIRECT_URL = 'core:top'
+
 NUMBER_GROUPING = 3
 
 MIDDLEWARE = [
@@ -132,4 +136,7 @@ STATICFILES_DIRS = [
 
 MEDIA_ROOT = os.path.join(BASE_DIR,'media') # 追加
 MEDIA_URL = '/media/' # 追加
+
+THEBASE_ENDPOINT = 'https://api.thebase.in/'
+ITEMS_PER_PAGE = 10
 

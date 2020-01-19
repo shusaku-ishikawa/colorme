@@ -1,0 +1,60 @@
+{% load humanize %}
+{% load thebasefilters %}
+<div class="modal" id="modal01">
+  <!-- モーダルウィンドウが開いている時のオーバーレイ -->
+  <div class="overLay modalClose"></div>
+  <!-- モーダルウィンドウの中身 -->
+  <div class="inner">
+    <div class="card">
+      {{ object.detail|htmlize|safe }}
+    </div>
+  <a href="" class="modalClose">Close</a>
+  </div>
+</div>
+<style>
+  .modal {
+  position:absolute;
+  width:100%;
+  height:100vh;
+  top:0;
+  left:0;
+  display:none;
+  text-align: center;
+}
+ 
+/* オーバーレイのスタイル */
+.overLay {
+  position:absolute;
+  top:0;
+  left:0;
+  background:rgba(200,200,200,0.9);
+  opacity: 0.2;
+  width:100%;
+  height:100vh;
+  z-index:10;
+}
+ 
+/* モーダルウィンドウの中身のスタイル */
+.modal .inner {
+  position:absolute;
+  z-index:11;
+
+}
+</style>
+<script>
+$(function(){
+ 
+ // モーダルウィンドウが開くときの処理    
+ $(".modal-open").click(function() {
+  $(this).parent().find('.modal').fadeIn()
+ });
+  
+ // モーダルウィンドウが閉じるときの処理    
+ $(".modalClose").click(function(){
+    $(this).parents(".modal").fadeOut();
+    $(".modalOpen").removeClass("open");
+    return false;
+ });  
+     
+ });
+</script>

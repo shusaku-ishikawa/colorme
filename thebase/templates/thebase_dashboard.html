@@ -1,0 +1,72 @@
+{% extends 'thebase_base_template.html' %}
+{% load thebasefilters %}
+
+{% load humanize %}
+{% block title %}
+  BASE Dashboard
+{% endblock %}
+
+{% block thebase_content_style %}
+  <style>
+    a.btn.btn-primary {
+      color: white;
+    }
+  </style>
+{% endblock %}
+
+{% block thebase_content %}
+  
+  {% if user.thebase_auth %}
+    <div class="table-responsive">
+    <table class="table">
+      <tr>
+        <th>client_id</th>
+        <td>{{ user.thebase_auth.client_id }}</td>
+      </tr>
+      <tr>
+        <th>client_secret_id</th>
+        <td>{{ user.thebase_auth.client_secret_id }}</td>
+      </tr>
+      <tr>
+        <th>authorization_code</th>
+        <td>
+          {% if user.thebase_auth.authorization_code %}
+            {{ user.thebase_auth.authorization_code }}
+            <a href="{% url 'thebase:authorize' %}" class="btn btn-primary">再認可</a>
+          {% else %}
+            まだ認可されていません<a href="{% url 'thebase:authorize' %}" class="btn btn-primary">認可</a>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>access_token</th>
+        <td>
+          {% if user.thebase_auth.access_token %}
+            {{ user.thebase_auth.access_token }}
+            {% if user.thebase_auth.access_token_expires_in|valid %}
+            <span class="badge badge-success">有効</span>
+            {% else %}
+             <span class="badge badge-danger">期限切れ</span>
+            {% endif %}
+            <a class="btn btn-primary" href='{% url 'thebase:authorize' %}?refresh=true'>リフレッシュ</a>
+          {% else %}
+            --
+          {% endif %}
+          
+        </td>
+      </tr>
+      <tr>
+        <th>refresh_token</th>
+        <td>
+          {% if user.thebase_auth.refresh_token %}
+            {{ user.thebase_auth.refresh_token }}
+          {% else %}
+            --
+          {% endif %}  
+        </td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+{% endblock %}
+

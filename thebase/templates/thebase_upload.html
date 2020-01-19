@@ -1,0 +1,51 @@
+{% extends 'thebase_base_template.html' %}
+{% load thebasefilters %}
+{% load humanize %}
+{% block title %}
+  BASE UPLOAD
+{% endblock %}
+
+{% block thebase_content_style %}
+  <style>
+
+  </style>
+{% endblock %}
+
+{% block thebase_content %}
+<form class="form-inline" method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="upload">
+    <div class="form-group">
+    <div class="ml-2 mr-2">
+      <input type="file" name="uploadfile" class="form-control" id="id-uploadfile">
+    </div>
+  </div>
+    <button type="submit" class="btn btn-primary">アップロード</button>
+</form>
+{% if errors %}
+  <table class="table">
+    <caption>エラー</caption>
+    <thead>
+      <th>
+        行
+      </th>
+      <th>
+        内容
+      </th>
+    </thead>
+    <tbody>
+      {% for er in errors %}
+      <tr>
+        <td>
+          {{ er.line_number }}
+        </td>
+        <td>
+          {{ er.error }}
+        </td>
+      </tr>
+      {% endfor  %}
+    </tbody>
+  </table>
+{% endif %}
+{% endblock %}
+

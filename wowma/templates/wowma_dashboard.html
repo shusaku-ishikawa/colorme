@@ -23,9 +23,22 @@
 {% endblock %}
 
 {% block content %}
+  <form class="form-inline">
+    <input type="hidden" name="action" value="search">
+     <div class="form-group">
+      <label for="id-itemname">itemName(部分一致):</label>
+      <div class="ml-2 mr-2">
+       <input type="text" name="itemname" class="form-control" id="id-itemname" value="{{ searchparams.itemname }}">
+     </div>
+    </div>
+      <button type="submit" class="btn btn-primary">検索</button>
+  </form>
   {% if search_result.error %}
   {{ search_result.error.code }} {{ search_result.error.message }}
-  {% else %}
+  {% elif search_result.items != None %}
+  
+  {% if search_result.max_count %}
+  {{ search_result.max_count }}件ヒットしました
   <div class="table-responsive">
     <table class="table table-bordered table-striped">
       <thead class="thead-dark">
@@ -94,9 +107,13 @@
       </tbody>
     </table>
   </div>
-
-  {% endif %}
   {% include 'wowma_dashboard_pagination.html' %}
-    
+  {% else %}
+  該当する商品が見つかりませんでした
+  {% endif %}
+  {% else %}
+    <!-- not yet searched -->
+    検索してください
+  {% endif %}
 {% endblock %}
 

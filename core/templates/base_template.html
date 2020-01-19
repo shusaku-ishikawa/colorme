@@ -12,23 +12,22 @@
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
   <title>{% block title %}{% endblock %}</title>
   <style>
-    body {
-      background-color: #f8f9fa
+
+    .wrapper {
+        display: flex;
+        width: 100%;
+        align-items: stretch;
+    }
+    .wrapper {
+        display: flex;
+        align-items: stretch;
     }
   </style>
   {% block style %}{% endblock %}
 </head>
 <body>
   {% include 'navbar.html' %}
-  <div class="container">
-    {% if messages %}
-      {% for message in messages %}
-          <div class="{{ message|bootstrap_message_classes }} alert-dismissable">
-              <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>
-              {{ message }}
-          </div>
-      {% endfor %}
-    {% endif %}
+  <div class="wrapper">
     {% block content %}{% endblock %}
     {% include "footer.html" %}
   </div>

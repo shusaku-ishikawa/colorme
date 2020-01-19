@@ -2,6 +2,17 @@ from django.db import models
 import xml.etree.ElementTree as ET
 from .enums import *
 
+class AuthInfo(models.Model):
+    def __str__(self):
+        return self.application_key or ''
+    application_key = models.CharField(
+        max_length = 100,
+        primary_key = True
+    )
+    store_id = models.CharField(
+        max_length = 10,
+    )
+
 # Create your models here.
 class WowmaItem(object):   
     def __init__(self, item_element):
@@ -145,7 +156,7 @@ class WowmaItem(object):
 
 import math
 class WowmaItemSearchResult(object):
-    def __init__(self, response_parsed, page):
+    def __init__(self, response_parsed, limit, page):
         self.status = response_parsed.find('./result/status').text
         if self.status != API_STATUS_SUCCESS:
             self.error = self.Error(response_parsed.find('./result/error')) 
@@ -154,8 +165,9 @@ class WowmaItemSearchResult(object):
         else:
             result_count = response_parsed.find('./searchResult/resultCount').text
             max_count = response_parsed.find('./searchResult/maxCount').text
-            self.pagination = self.Pagination(int(result_count), int(page), int(max_count))            
+            self.pagination = self.Pagination(limit, page, int(max_count))            
             self.items = [WowmaItem(item) for item in response_parsed.findall('./searchResult/resultItems')]
+            self.max_count = max_count
     class Error(object):
         def __init__(self, error_element):
             self.code = error_element.find('code').text
@@ -177,10 +189,10 @@ class WowmaItemSearchResult(object):
             return self.current_page > 1
         @property
         def first_index_hidden(self):
-            return self.display_list[0] != 1
+            return (self.display_list[0] != 1) if len(self.display_list) > 0 else False
         @property
         def last_index_hidden(self):
-            return self.display_list[len(self.display_list) - 1] != self.total_pages
+            return (self.display_list[len(self.display_list) - 1] != self.total_pages) if len(self.display_list) > 0 else False
         
         def init_display_list(self):
             display_count = self.total_pages if self.total_pages < __class__.max_display_pages else __class__.max_display_pages
@@ -194,7 +206,8 @@ class WowmaItemSearchResult(object):
                 
             if (self.current_page - left_offset) < 1:
                 print('margin')
-                margin = left_offset - (self.current_page - 2)
+                margin = left_offset - (self.current_page - 1)
+                print(margin)
                 left_offset -= margin
                 right_offset += margin
             

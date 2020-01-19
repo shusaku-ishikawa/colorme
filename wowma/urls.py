@@ -5,5 +5,5 @@ from . import views
 app_name = 'wowma'
 
 urlpatterns = [
-    path('', views.DashBoard.as_view()),
+    path('dashboard', views.DashBoard.as_view(), name = 'dashboard'),
 ]

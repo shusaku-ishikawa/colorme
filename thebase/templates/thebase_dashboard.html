@@ -73,7 +73,7 @@
   <form method="post">
     {% csrf_token %}
     <input type="hidden" name="operation" value="delete">
-    <button type="submit" class="btn btn-warning">認証情報を削除する</button>
+    <button id="id_delete_oauth" type="submit" class="btn btn-warning">認証情報を削除する</button>
   </form>
   {% else %}
     <form class="form" method="post">
@@ -105,10 +105,9 @@
 {% block thebase_script %}
 <script>
   $(function () {
-    var $checkbox = $('select-checkbox');
-    var $check_all = $('#id_check_all');
-    $check_all.on('change', function() {
-      $checkbox.prop('checked', $(this).prop('checked'));
+    var $delete_oauth = $('#id_delete_oauth');
+    $delete_oauth.on('click', function() {
+      return window.confirm('本当に削除しますか？');
     });
   });
 </script>

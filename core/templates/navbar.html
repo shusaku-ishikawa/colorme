@@ -12,10 +12,21 @@
         <a class="nav-link" href="{% url 'thebase:dashboard' %}">base</a>
       </li>
     </ul>
+    <ul class="navbar-nav ml-auto">
+      {% if user.is_authenticated %}
+      <a class="btn btn-sm btn-outline-danger" href="{% url 'core:logout' %}">
+        Logout
+      </a>
+      {% else %}
+      {% endif %}
+    </ul>
   </div>
 </nav>
 <style>
   nav.navbar {
     height:5vh
+  }
+  a.btn.btn-outline-danger {
+    color:white
   }
 </style>

@@ -1,16 +1,51 @@
 {% extends 'base_template.html' %}
 {% load humanize %}
+{% load static %}
 {% block title %}
 Top
 {% endblock %}
 
 {% block style %}
-  <style>
-   
-  </style>
+<style>
+  .card {
+    height: 20rem;
+  }
+  a.custom-btn {
+    border-radius: 20px;
+  }
+  .img-wrapper { 
+    height: 200px;
+  }
+  .img-wrapper img {
+    
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-  Welcome !!
-{% endblock %}
+<div class="container">
+  <div class="row">
+    <div class="col-6">
+      <div class="card m-3">
+        <div class="img-wrapper p-2">
+          <img class="card-img-top" src="{% static 'core/base_logo.png' %}" alt="base">
+        </div>
+        <div class="card-body">
+          <a href="{% url 'thebase:dashboard' %}" class="btn btn-success btn-block custom-btn">BASE管理画面</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="card m-3">
+        <div class="img-wrapper p-2">
+          <img class="card-img-top" src="{% static 'core/wowma_logo.png' %}" alt="wowma">
+        </div>
+        <div class="card-body">
+          <a href="#" class="btn btn-warning btn-block custom-btn">Wowma管理画面</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
+{% endblock %}

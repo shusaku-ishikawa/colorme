@@ -135,7 +135,7 @@ class Item(object):
             'detail': self.detail,
             'price': self.price,
             'item_tax_type': self.item_tax_type,
-            'stock': self.actual_stock,
+            'stock': self.actual_stock if self.variations else self.stock,
             'visible': self.visible,
             'identifier': self.identifier,
             'list_order': self.list_order,

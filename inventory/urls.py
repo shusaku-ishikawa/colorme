@@ -20,9 +20,9 @@ from django.conf import settings
 from django.conf.urls.static import static # 追加
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    url(r'^core/', include('core.urls')),
-    url(r'^wowma/', include('wowma.urls')),
-    url(r'^thebase/', include('thebase.urls')),
+    path('inventory/admin/', admin.site.urls),
+    url(r'^inventory/core/', include('core.urls')),
+    url(r'^inventory/wowma/', include('wowma.urls')),
+    url(r'^inventory/thebase/', include('thebase.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # 追加
 

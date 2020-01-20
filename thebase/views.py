@@ -24,7 +24,7 @@ class DashBoard(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         params = request.POST.copy()
-        operation = params.pop('operation')
+        operation = params.pop('operation')[0]
         if operation == 'add':
             form = OauthModelForm(params)
             if form.is_valid():
@@ -42,8 +42,10 @@ class DashBoard(LoginRequiredMixin, TemplateView):
             obj = Oauth.objects.get(client_id = request.user.thebase_auth.client_id)
             obj.delete()
             messages.success(request, '認証情報を削除しました')
-            return self.render_to_response(context)
-
+            return redirect('thebase:dashboard')
+        else:
+            print(operation)
+            print('hogehoge')
 class Authorize(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_dashboard.html'
     def get(self, request, *args, **kwargs):
@@ -88,18 +90,18 @@ class Authorize(LoginRequiredMixin, TemplateView):
 class Search(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_searchitems.html'
     def get(self, request, *args, **kwargs):
+        if not request.user.thebase_auth.access_token:
+            messages.error(request, 'アクセストークンが発行されていません')
+            return redirect('thebase:dashboard')
         context = self.get_context_data(**kwargs)
         context['pagename'] = 'search'
-        if 'action' in request.GET and request.GET.get('action') == 'search':
-            
+        if 'action' in request.GET and request.GET.get('action') == 'search': 
             if 'q' in request.session:
                 del request.session['q']
             q = request.GET.get('q') or ''
             request.session['q'] = q
         else:
             q = request.session['q'] if 'q' in request.session else None
-            
-        
         context['q'] =  q        
         context['search_result'] = thebase_api.search_items(request.user.thebase_auth, q)
 
@@ -129,6 +131,9 @@ class Upload(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_upload.html'
     
     def get(self, request, *args, **kwargs):
+        if not request.user.thebase_auth.access_token:
+            messages.error(request, 'アクセストークンが発行されていません')
+            return redirect('thebase:dashboard')
         context = super().get_context_data(**kwargs)
         context['pagename'] = 'upload'
         return super().render_to_response(context)

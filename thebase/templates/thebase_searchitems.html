@@ -175,7 +175,7 @@
 {% block thebase_script %}
 <script>
   $(function () {
-    var $checkbox = $('select-checkbox');
+    var $checkbox = $('.select-checkbox');
     var $check_all = $('#id_check_all');
     $check_all.on('change', function() {
       $checkbox.prop('checked', $(this).prop('checked'));

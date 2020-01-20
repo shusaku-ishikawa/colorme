@@ -43,8 +43,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
     username = models.CharField(_('username'), max_length = 100, primary_key = True)
-    wowma_auth = models.OneToOneField(to = wowma_Auth, null = True, blank =True, on_delete = models.CASCADE)
-    thebase_auth = models.OneToOneField(to = thebase_Auth, null = True, blank = True, on_delete = models.CASCADE)
+    wowma_auth = models.OneToOneField(to = wowma_Auth, null = True, blank =True, on_delete = models.SET_NULL)
+    thebase_auth = models.OneToOneField(to = thebase_Auth, null = True, blank = True, on_delete = models.SET_NULL)
     
 
     is_staff = models.BooleanField(

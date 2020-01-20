@@ -7,11 +7,12 @@
       color: white;
     }
     .sidebar {
-      width: 20vw;
+      width: 10vw;
     }
     div.content {
       padding: 1rem;;
-      width: 80vw;
+      width: 90vw;
+      overflow: auto;
       background-color: #f0f0da;
     }
   </style>
@@ -35,6 +36,7 @@
     {% block thebase_content %}
     {% endblock %}
   </div>
-  
 {% endblock %}
-
+{% block script %}
+{% block thebase_script %}{% endblock %}
+{% endblock %}

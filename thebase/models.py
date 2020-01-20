@@ -9,7 +9,6 @@ import os, json
 
 # Create your models here.
 class Oauth(models.Model):
-    
     def __str__(self):
         return self.client_secret_id or ''
     client_id = models.CharField(
@@ -93,21 +92,24 @@ class Item(object):
         'list_order'
     ]
     def __init__(self, item_dict):
-        self.item_id = item_dict['item_id']
-        self.title = item_dict['title']
-        self.detail = item_dict['detail']
-        self.price = item_dict['price']
-        self.proper_price = item_dict['proper_price'] if 'proper_price' in item_dict else None
-        self.item_tax_type = item_dict['item_tax_type']
-        self.stock = item_dict['stock']
-        self.visible = item_dict['visible']
-        self.list_order = item_dict['list_order']
-        self.identifier = item_dict['identifier']
-        for i in range(1, 20):
-            setattr(self, f'img{i}_origin', item_dict[f'img{i}_origin'] if f'img{i}_origin' in item_dict else None)
-        self.modified = item_dict['modified'] if 'modified' in item_dict else None
-        
-        self.variations = [self.Variation(variation_dict) for variation_dict in item_dict['variations']]
+        if type(item_dict) == str: # if delete
+            self.item_id = item_dict
+        elif type(item_dict) == dict:
+            self.item_id = item_dict['item_id']
+            self.title = item_dict['title']
+            self.detail = item_dict['detail']
+            self.price = item_dict['price']
+            self.proper_price = item_dict['proper_price'] if 'proper_price' in item_dict else None
+            self.item_tax_type = item_dict['item_tax_type']
+            self.stock = item_dict['stock']
+            self.visible = item_dict['visible']
+            self.list_order = item_dict['list_order']
+            self.identifier = item_dict['identifier']
+            for i in range(1, 20):
+                setattr(self, f'img{i}_origin', item_dict[f'img{i}_origin'] if f'img{i}_origin' in item_dict else None)
+            self.modified = item_dict['modified'] if 'modified' in item_dict else None
+            
+            self.variations = [self.Variation(variation_dict) for variation_dict in item_dict['variations']]
     class Variation(object):
         def __init__(self, variation_dict):
             self.variation_id = variation_dict['variation_id'] if 'variation_id' in variation_dict else None
@@ -199,8 +201,21 @@ class Item(object):
 
     def edit(self):
         pass
-    def delete(self):
-        pass
+    def delete(self, oauth):
+        if not self.item_id:
+            self.valid = False
+            self.error = 'item idがセットされていません'
+            return
+        url = f'{THEBASE_ENDPOINT}1/items/delete'
+        response_json = requests.post(url, data={'item_id': self.item_id}, headers = self.get_header(oauth.access_token)).json()
+        if 'error' in response_json:
+            self.valid = False
+            self.error = response_json['error_description']
+        elif 'result' in response_json and response_json['result']:
+            self.valid = True
+        return self.valid
+
+        
 class ItemSearchResult(object):
     def __init__(self, response_dict, q):
         if 'error' in response_dict:

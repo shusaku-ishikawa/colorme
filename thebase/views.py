@@ -3,20 +3,46 @@ from django.views.generic import TemplateView, FormView
 from .thebase_api import thebase_api
 from django.conf import settings
 from .models import Oauth, UploadFileColumns, Item
+from core.models import User
 from .enums import *
 from django.contrib import messages
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 import csv
 from io import TextIOWrapper, StringIO
-
+from .forms import OauthModelForm
 class DashBoard(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_dashboard.html'
      
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         context['pagename'] = 'dashboard'
+        context['form'] = OauthModelForm()
+
         return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        params = request.POST.copy()
+        operation = params.pop('operation')
+        if operation == 'add':
+            form = OauthModelForm(params)
+            if form.is_valid():
+                instance = form.save()
+                user = User.objects.get(pk = request.user.pk)
+                user.thebase_auth = instance
+                user.save()
+                messages.success(request, '認証情報を作成しました')
+                return redirect('thebase:dashboard')
+            else:
+                print(form.errors)
+                context['form'] = form
+                return self.render_to_response(context)
+        elif operation == 'delete':
+            obj = Oauth.objects.get(client_id = request.user.thebase_auth.client_id)
+            obj.delete()
+            messages.success(request, '認証情報を削除しました')
+            return self.render_to_response(context)
 
 class Authorize(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_dashboard.html'
@@ -78,6 +104,26 @@ class Search(LoginRequiredMixin, TemplateView):
         context['search_result'] = thebase_api.search_items(request.user.thebase_auth, q)
 
         return self.render_to_response(context)
+class Delete(LoginRequiredMixin, TemplateView):
+    template_name = 'thebase_delete.html'
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        operation = request.GET.get('operation')
+        selected_items = request.GET.getlist('selected_items[]')
+        context['items_to_delete'] = selected_items
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        items_to_delete = request.POST.getlist('items_to_delete[]')
+        for item_id in items_to_delete:
+            item  = Item(item_id)
+            if not item.delete(request.user.thebase_auth):
+                messages.error(request, item.error)
+                print(item.error)
+            else: # if success
+                print('item successfully deleted')
+                messages.success(request, f'{item.item_id}を削除しました')
+        return redirect('thebase:search')
 
 class Upload(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_upload.html'

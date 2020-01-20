@@ -9,7 +9,10 @@
 {% block thebase_content_style %}
   <style>
     a.btn.btn-primary {
-      color: white;
+      color: white
+    }
+    form {
+      width : 300px;
     }
   </style>
 {% endblock %}
@@ -67,6 +70,48 @@
       </tr>
     </table>
   </div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="operation" value="delete">
+    <button type="submit" class="btn btn-warning">認証情報を削除する</button>
+  </form>
+  {% else %}
+    <form class="form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="operation" value="add">
+      {{ form.non_field_errors }}
+      <div class="form-group">
+        <label>{{ form.client_id.label }}:</label>
+        {{ form.client_id }}
+        {{ form.errors.client_id }}
+      </div>
+     
+      <div class="form-group">
+        <label>{{ form.client_secret_id.label }}:</label>
+        {{ form.client_secret_id }}
+        {{ form.errors.client_secret_id }}
+      </div>
+      
+      <div class="form-group">
+        <label>{{ form.redirect_uri.label }}:</label>
+        {{ form.redirect_uri }}
+        {{ form.errors.redirect_uri }}
+      </div>
+      <button type="submit" class="btn btn-primary">登録</button>
+    </form>
   {% endif %}
 {% endblock %}
+
+{% block thebase_script %}
+<script>
+  $(function () {
+    var $checkbox = $('select-checkbox');
+    var $check_all = $('#id_check_all');
+    $check_all.on('change', function() {
+      $checkbox.prop('checked', $(this).prop('checked'));
+    });
+  });
+</script>
+{% endblock %}
+
 

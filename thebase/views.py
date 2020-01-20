@@ -90,7 +90,7 @@ class Authorize(LoginRequiredMixin, TemplateView):
 class Search(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_searchitems.html'
     def get(self, request, *args, **kwargs):
-        if not request.user.thebase_auth.access_token:
+        if not request.user.thebase_auth or not request.user.thebase_auth.access_token:
             messages.error(request, 'アクセストークンが発行されていません')
             return redirect('thebase:dashboard')
         context = self.get_context_data(**kwargs)
@@ -131,7 +131,7 @@ class Upload(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_upload.html'
     
     def get(self, request, *args, **kwargs):
-        if not request.user.thebase_auth.access_token:
+        if not request.user.thebase_auth or not request.user.thebase_auth.access_token:
             messages.error(request, 'アクセストークンが発行されていません')
             return redirect('thebase:dashboard')
         context = super().get_context_data(**kwargs)

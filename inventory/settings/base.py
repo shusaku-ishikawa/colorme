@@ -115,8 +115,8 @@ USE_TZ = True
 STATIC_URL = '/static_inventory/'
 STATIC_ROOT = os.path.join(BASE_DIR,'static') # 追加
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'wowma/static'),
-    os.path.join(BASE_DIR, 'base/static'),
+    #os.path.join(BASE_DIR, 'wowma/static'),
+    #os.path.join(BASE_DIR, 'base/static'),
     os.path.join(BASE_DIR, 'core/static')
 ]
 

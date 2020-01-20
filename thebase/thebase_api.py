@@ -25,7 +25,6 @@ class ThebaseApi:
         query_string = urlencode(parameters)
         url = f'{THEBASE_ENDPOINT}1/items?{query_string}'
         response_json = requests.get(url, headers = self.get_headers(oauth.access_token)).json()
-        print(response_json)
         if 'error' in response_json and response_json['error_description'] == 'アクセストークンが無効です。':
             oauth.get_access_token(GRANT_TYPE_REFRESH_TOKEN)
             response_json = requests.get(url, headers = self.get_headers(oauth.access_token)).json()

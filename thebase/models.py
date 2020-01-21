@@ -144,13 +144,25 @@ class Item(object):
             params[f'variation[{index}]'] = var.variation
             params[f'variation_stock[{index}]'] = var.variation_stock
         return params
-    def get_add_image_params(self, image_no, image_url):
-        return {
+    @property
+    def edit_params(self):
+        params = {
             'item_id': self.item_id,
-            'image_no': image_no,
-            'image_url': image_url
+            'title': self.title,
+            'detail': self.detail,
+            'price': self.price,
+            'item_tax_type': self.item_tax_type,
+            'stock': self.actual_stock if self.variations else self.stock,
+            'visible': self.visible,
+            'identifier': self.identifier,
+            'list_order': self.list_order,
         }
-
+        for index, var in enumerate(self.variations):
+            params[f'variation_id[{index}]'] = var.variation_id or ''
+            params[f'variation[{index}]'] = var.variation
+            params[f'variation_stock[{index}]'] = var.variation_stock
+        return params
+    
     def validate_for_add(self, line_number):
         self.line_number = line_number
         for f in __class__.required_fields:
@@ -168,7 +180,13 @@ class Item(object):
         if not oauth.access_token_valid:
             oauth.get_access_token(GRANT_TYPE_REFRESH_TOKEN)
         url = f'{THEBASE_ENDPOINT}1/items/add_image'
-        return requests.post(url, self.get_add_image_params(image_no, image_url), headers = self.get_header(oauth.access_token)).json()
+        return requests.post(url, {'item_id':self.item_id,'image_no':image_no,'image_url':image_url}, headers = self.get_header(oauth.access_token)).json()
+
+    def delete_image(self, oauth, image_no):
+        if not oauth.access_token_valid:
+            oauth.get_access_token(GRANT_TYPE_REFRESH_TOKEN)
+        url = f'{THEBASE_ENDPOINT}1/items/delete_image'
+        return requests.post(url, {'item_id':self.item_id,'image_no':image_no}, headers = self.get_header(oauth.access_token)).json()
 
     def add(self, oauth):
         if not oauth.access_token_valid:
@@ -178,9 +196,6 @@ class Item(object):
         response_json = requests.post(url, data=self.add_params, headers = self.get_header(oauth.access_token)).json()
         
         if 'error' in response_json:
-            if response_json['error_description'] == 'アクセストークンが無効です。':
-                oauth.get_access_token(GRANT_TYPE_REFRESH_TOKEN)
-                response_json = requests.post(url, self.add_params, headers = headers).json()
             if 'error' in response_json:
                 self.valid = False
                 self.error = response_json['error_description']
@@ -200,7 +215,46 @@ class Item(object):
         return self.valid
 
     def edit(self):
-        pass
+        if not oauth.access_token_valid:
+            oauth.get_access_token(GRANT_TYPE_REFRESH_TOKEN)
+        url = f'{THEBASE_ENDPOINT}1/items/edit'
+        response_json = requests.post(url, data=self.edit_params, headers = self.get_header(oauth.access_token)).json()
+        
+        if 'error' in response_json:
+            if 'error' in response_json:
+                self.valid = False
+                self.error = response_json['error_description']
+        else:
+            item_json = response_json['item']
+            self.item_id = item_json['item_id']
+            
+            # add images if changed
+            for i in range(20):
+                #### image #####
+                key = f'img{i + 1}_origin'
+                image_url = getattr(self, key)
+                if (key in item_json and item_json[key] != image_url) or (key not in item_json and image_url != ''): # if the registered image url changed or new image added
+                    image_response_json = self.add_image(oauth, image_no, image_url)
+                    if 'error' in image_response_json:
+                        print('add_image_error')
+                        self.valid = False
+                        self.error = image_response_json['error_description']
+                        break
+                elif key in item_json and item_json[key] != '' and image_url == '': # if image deleted
+                    image_response_json = self.delete_image(oauth, image_no)
+                    if 'error' in image_response_json:
+                        print('delete_image_error')
+                        self.valid = False
+                        self.error = image_response_json['error_description']
+                        break
+                else:
+                    pass
+
+                ### variation ###
+                base_variations = item_json['variations']
+                local_variation = self.variations
+
+        return self.valid
     def delete(self, oauth):
         if not self.item_id:
             self.valid = False
@@ -239,9 +293,9 @@ class UploadFileColumns(object):
     item_tax_type = 5
     detail = 6
     variation_start = 7
-    stock = 27
-    list_order = 28
-    visible = 29
-    delivery_company_id = 30
-    img_origin_start = 31
-    variation_stock_start = 51
+    stock = 47
+    list_order = 48
+    visible = 49
+    delivery_company_id = 50
+    img_origin_start = 51
+    variation_stock_start = 71

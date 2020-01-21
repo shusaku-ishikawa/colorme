@@ -147,7 +147,7 @@ class Upload(LoginRequiredMixin, TemplateView):
         ret['price'] = cols[UploadFileColumns.price]
         ret['item_tax_type'] = cols[UploadFileColumns.item_tax_type]
         ret['detail'] = cols[UploadFileColumns.detail]
-        ret['variations'] = [{'variation': cols[UploadFileColumns.variation_start + i], 'variation_stock': cols[UploadFileColumns.variation_stock_start + i]} for i in range(20) if cols[UploadFileColumns.variation_start + i] != '']
+        ret['variations'] = [{'variation_id': cols[UploadFileColumns.variation_start + 2*i], 'variation': cols[UploadFileColumns.variation_start + 2*i + 1], 'variation_stock': cols[UploadFileColumns.variation_stock_start + i]} for i in range(20) if cols[UploadFileColumns.variation_start + 2*i + 1] != '']
         for i in range(20):
             if not cols[UploadFileColumns.img_origin_start + i] or cols[UploadFileColumns.img_origin_start + i] == '':
                 break
@@ -179,10 +179,12 @@ class Upload(LoginRequiredMixin, TemplateView):
             context['errors'] = [item for item in items_to_register if not item.valid]
             return self.render_to_response(context)
         else:
-            # do add action
             for item in items_to_register:
                 if item.valid:
-                    item.add(request.user.thebase_auth)
+                    if not item.item_id: # if new
+                        item.add(request.user.thebase_auth)
+                    else: # if edit
+                        item.edit(request.user.thebase_auth)
             runtimeerrors = [item for item in items_to_register if not item.valid]
             if len(runtimeerrors) > 0:
                 messages.error(request, '登録時にエラーがありました')

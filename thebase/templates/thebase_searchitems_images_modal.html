@@ -5,15 +5,24 @@
   <div class="overLay modalClose"></div>
     <!-- モーダルウィンドウの中身 -->
   <div class="modal-content">
-    <h3 class="modal-h">Detail</h3>
-    <div class="modal-text">
-      {{ object.detail|htmlize|safe }}
+    <h3 class="modal-h">Images</h3>
+    <div class="modal-text container">
+      <div class="row">
+        
+        {% for image_name, image_url in images %}
+        <div class="col-2">
+          <figure class="figure">
+            <img src="{{ image_url }}" class="thumbnail">
+            <figcaption class="figure-caption">{{ image_name}}</figcaption>
+          </figure>
+        </div>
+        {% endfor %}
+      </div>
     </div>
     <div class="modal-f">
       <a href="" class="modalClose btn btn-primary mb-2">Close</a>
     </div>
   </div>
- 
 </div>
 <style>
 .modal {
@@ -52,13 +61,15 @@
   text-align: left;
 }
 /* モーダルウィンドウの中身のスタイル */
-
+.thumbnail {
+  width: 100%;
+  height : auto 
+}
 </style>
 <script>
 $(function(){
- 
  // モーダルウィンドウが開くときの処理    
- $(".modal-open").click(function() {
+ $(".image-modal-open").click(function() {
   $(this).parent().find('.modal').fadeIn();
   return false;
  });

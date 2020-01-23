@@ -120,6 +120,9 @@ class Item(object):
             self.variation_stock = variation_dict['variation_stock']
             self.variation_identifier = variation_dict['variation_identifier'] if 'variation_identifier' in variation_dict else None
     @property
+    def images(self):
+        return [(f'img{i+1}_origin', getattr(self, f'img{i+1}_origin')) for i in range(20) if getattr(self, f'img{i+1}_origin')]
+    @property
     def actual_stock(self):
         stock = 0
         for var in self.variations:

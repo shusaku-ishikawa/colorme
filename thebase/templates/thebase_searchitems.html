@@ -105,6 +105,8 @@
               </td>
               <td>
                 <img src="{{ object.img1_origin }}" class="thumbnail">
+                {% include 'thebase_searchitems_images_modal.html' with images=object.images %}
+                <button class="image-modal-open btn btn-primary">全て表示</button>
               </td>
               <td>
                 {{ object.item_id }}
@@ -113,8 +115,8 @@
                 {{ object.title }}
               </td>
               <td>
-                {% include 'thebase_searchitems_modal.html' with object=object %}
-                <button class="modal-open btn btn-primary" type="button">全文表示</button>
+                {% include 'thebase_searchitems_detail_modal.html' with object=object %}
+                <button class="modal-open btn btn-primary" type="button">表示</button>
               </td>
               <td>
                 {{ object.price|intcomma }}
@@ -123,7 +125,7 @@
                 {{ object.proper_price|default_if_none:'-' }}
               </td>
               <td>
-                {{ object.item_tax_type }}
+                {{ object.item_tax_type |tax_type }}
               </td>
               <td>
                 {{ object.stock }}
@@ -139,17 +141,23 @@
               </td>
               
               <td>
-                {{ object.modified }}
+                {{ object.modified | todatetime | date:"Y/n/j H:i:s"  }}
               </td>
               <td>
                 <table class="table table-sm">
                   <thead>
+                    <th>id</th>
                     <th>variation</th>
                     <th>stock</th>
                   </thead>
                   <tbody>
                     {% for var in object.variations %}
                     <tr>
+
+                      <td>
+                        {{ var.variation_id }}
+                      </td>
+                      
                       <td>
                         {{ var.variation }}
                       </td>

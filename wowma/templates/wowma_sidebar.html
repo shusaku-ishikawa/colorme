@@ -1,0 +1,56 @@
+<style>
+    #sidebar {
+      width:100%;
+      min-height: 95vh;
+      height: 100%;
+    }
+    
+    #sidebar {
+      /* don't forget to add all the previously mentioned styles here too */
+      background: green;
+      color: #fff;
+      transition: all 0.3s;
+    }
+  
+    #sidebar .sidebar-header {
+        padding: 20px;
+        background: darkgreen;
+    }
+  
+    #sidebar ul.components {
+        padding: 20px 0;
+        border-bottom: 1px solid #8eb632;
+    }
+    #sidebar ul li a {
+        padding: 10px;
+        font-size: 1.1em;
+        display: block;
+        color: white;
+        text-decoration: none;
+    }
+    #sidebar ul li a:hover {
+        color: #7386D5;
+        background: #fff;
+    }
+    #sidebar ul li.active > a, a[aria-expanded="true"] {
+        color: #fff;
+        background:lightgreen;
+    }
+  </style>
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <h3>WOWMA</h3>
+    </div>
+    <ul class="list-unstyled components">
+      <li class="{% if pagename == 'dashboard' %}active{% endif %}">
+        <a href="{% url 'wowma:dashboard' %}">Top</a>
+      </li>
+      <li class="{% if pagename == 'search' %}active{% endif %}">
+        <a href="{% url 'wowma:search' %}">商品検索</a>
+      </li>
+      <li class="{% if pagename == 'upload' %}active{% endif %}">
+        <a href="{% url 'wowma:upload' %}">一括登録</a>
+      </li>
+    </ul>
+  </nav>
+  

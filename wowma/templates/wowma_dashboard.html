@@ -1,119 +1,72 @@
-{% extends 'base_template.html' %}
+{% extends 'wowma_base_template.html' %}
 {% load wowmafilters %}
+
 {% load humanize %}
 {% block title %}
   Wowma Dashboard
 {% endblock %}
 
-{% block style %}
+{% block wowma_content_style %}
   <style>
-    .container {
-      margin-left: 0;
-      margin-right:0;
-      max-width: 100%!important;
+    a.btn.btn-primary {
+      color: white
     }
-    td {
-      white-space: nowrap;
-    }
-    img.item-thumbnail {
-      width: 100px;
-      height: auto;
+    form {
+      width : 300px;
     }
   </style>
 {% endblock %}
 
-{% block content %}
-  <form class="form-inline">
-    <input type="hidden" name="action" value="search">
-     <div class="form-group">
-      <label for="id-itemname">itemName(部分一致):</label>
-      <div class="ml-2 mr-2">
-       <input type="text" name="itemname" class="form-control" id="id-itemname" value="{{ searchparams.itemname }}">
-     </div>
-    </div>
-      <button type="submit" class="btn btn-primary">検索</button>
-  </form>
-  {% if search_result.error %}
-  {{ search_result.error.code }} {{ search_result.error.message }}
-  {% elif search_result.items != None %}
+{% block wowma_content %}
   
-  {% if search_result.max_count %}
-  {{ search_result.max_count }}件ヒットしました
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped">
-      <thead class="thead-dark">
-        <th>
-          Lot number
-        </th>
-        <th>
-          Image
-        </th>
-        <th>
-          Item name
-        </th>
-        <th>
-          Item management id
-        </th>
-        <th>
-          Item management name
-        </th>
-        <th>
-          Item code
-        </th>
-        <th>
-          Item price
-        </th>
-        <th>
-          Sell method segment
-        </th>
-        <th>
-          Description
-        </th>
-        
-      </thead>
-      <tbody>
-        {% for object in search_result.items %}
-          <tr>
-            <td>
-              {{ object.lot_number }}
-            </td>
-            <td>
-              <img class="item-thumbnail" src="{{ object.images.0.image_url }}">
-            </td>
-            <td>
-              {{ object.item_name }}
-            </td>
-            <td>
-              {{ object.item_management_id | default_if_none:'-' }}
-            </td>
-            <td>
-              {{ object.item_management_name | default_if_none:'-' }}
-            </td>
-            <td>
-              {{ object.item_code }}
-            </td>
-            <td>
-              ¥{{ object.item_price | intcomma }}
-            </td>
-            <td>
-              {{ object.sell_method_segment | display_sell_method }}
-            </td>
-            <td>
-              {{ object.description | safe }}
-            </td>
-            
-          </tr>
-        {% endfor %}
-      </tbody>
+  {% if user.wowma_auth %}
+    <div class="table-responsive">
+    <table class="table">
+      <tr>
+        <th>application_key</th>
+        <td>{{ user.wowma_auth.application_key }}</td>
+      </tr>
+      <tr>
+        <th>store_id</th>
+        <td>{{ user.wowma_auth.store_id }}</td>
+      </tr>
     </table>
   </div>
-  {% include 'wowma_dashboard_pagination.html' %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="operation" value="delete">
+    <button id="id_delete_authinfo" type="submit" class="btn btn-warning">認証情報を削除する</button>
+  </form>
   {% else %}
-  該当する商品が見つかりませんでした
-  {% endif %}
-  {% else %}
-    <!-- not yet searched -->
-    検索してください
+    <form class="form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="operation" value="add">
+      {{ form.non_field_errors }}
+      <div class="form-group">
+        <label>{{ form.application_key.label }}:</label>
+        {{ form.application_key }}
+        {{ form.errors.application_key }}
+      </div>
+     
+      <div class="form-group">
+        <label>{{ form.store_id.label }}:</label>
+        {{ form.store_id }}
+        {{ form.errors.store_id }}
+      </div>
+      <button type="submit" class="btn btn-primary">登録</button>
+    </form>
   {% endif %}
 {% endblock %}
+
+{% block wowma_script %}
+<script>
+  $(function () {
+    var $delete_oauth = $('#id_delete_authinfo');
+    $delete_oauth.on('click', function() {
+      return window.confirm('本当に削除しますか？');
+    });
+  });
+</script>
+{% endblock %}
+
 

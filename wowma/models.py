@@ -213,3 +213,24 @@ class WowmaItemSearchResult(object):
             
             
             self.display_list = [index for index in range(self.current_page - left_offset, self.current_page + right_offset + 1)]
+
+class UploadFileColumns(object):
+    ctrl_col = 0
+    lot_number = 1
+    item_name = 2
+    item_management_id = 3
+    item_management_name = 4
+    item_code = 5
+    item_price = 6
+    sell_method_segment = 7
+    release_date = 8
+    maker_retail_price = 9
+    maker_retail_price_url = 10
+    tax_segment = 11
+    reduced_tax = 12
+    postage_segment = 13
+    postage = 14
+    delivery_id = 15
+    delivery_method_id_start = 16
+    delivery_method_name_start = 21
+

@@ -1,0 +1,122 @@
+{% extends 'wowma_base_template.html' %}
+{% load wowmafilters %}
+{% load humanize %}
+{% block title %}
+  Wowma Search
+{% endblock %}
+
+{% block wowma_content_style %}
+  <style>
+    .container {
+      margin-left: 0;
+      margin-right:0;
+      max-width: 100%!important;
+    }
+    td {
+      white-space: nowrap;
+    }
+    img.item-thumbnail {
+      width: 100px;
+      height: auto;
+    }
+  </style>
+{% endblock %}
+
+{% block wowma_content %}
+  <form class="form-inline">
+    <input type="hidden" name="action" value="search">
+     <div class="form-group">
+      <label for="id-itemname">itemName(部分一致):</label>
+      <div class="ml-2 mr-2">
+       <input type="text" name="itemname" class="form-control" id="id-itemname" value="{{ searchparams.itemname }}">
+     </div>
+    </div>
+      <button type="submit" class="btn btn-success">検索</button>
+  </form>
+  {% if search_result.error %}
+  {{ search_result.error.code }} {{ search_result.error.message }}
+  {% elif search_result.items != None %}
+  
+  {% if search_result.max_count %}
+  {{ search_result.max_count }}件ヒットしました
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="thead-dark">
+        <th>
+          Lot number
+        </th>
+        <th>
+          Image
+        </th>
+        <th>
+          Item name
+        </th>
+        <th>
+          Item management id
+        </th>
+        <th>
+          Item management name
+        </th>
+        <th>
+          Item code
+        </th>
+        <th>
+          Item price
+        </th>
+        <th>
+          Sell method segment
+        </th>
+        <th>
+          Description
+        </th>
+        
+      </thead>
+      <tbody>
+        {% for object in search_result.items %}
+          <tr>
+            <td>
+              {{ object.lot_number }}
+            </td>
+            <td>
+              <img class="item-thumbnail" src="{{ object.images.0.image_url }}">
+              {% include 'wowma_searchitems_images_modal.html' with images=object.images %}
+                <button class="image-modal-open btn btn-success">全て表示</button>
+            </td>
+            <td>
+              {{ object.item_name }}
+            </td>
+            <td>
+              {{ object.item_management_id | default_if_none:'-' }}
+            </td>
+            <td>
+              {{ object.item_management_name | default_if_none:'-' }}
+            </td>
+            <td>
+              {{ object.item_code }}
+            </td>
+            <td>
+              ¥{{ object.item_price | intcomma }}
+            </td>
+            <td>
+              {{ object.sell_method_segment | display_sell_method }}
+            </td>
+            <td>
+              {% include 'wowma_searchitems_detail_modal.html' with object=object %}
+              <button class="btn btn-success modal-open">表示</button>
+            </td>
+            
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'wowma_searchitems_pagination.html' %}
+  {% else %}
+  該当する商品が見つかりませんでした
+  {% endif %}
+  {% else %}
+    <!-- not yet searched -->
+    検索してください
+  {% endif %}
+{% endblock %}
+

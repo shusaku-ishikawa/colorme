@@ -1,9 +1,11 @@
 import requests
 from urllib.parse import urlencode
 import xml.etree.ElementTree as ET
-from .models import WowmaItem, WowmaItemSearchResult
+from .models import Item, ItemSearchResult
 from .enums import *
 import os
+from dicttoxml import dicttoxml
+
 
 class WowmaApi:
     proxies = {
@@ -35,6 +37,7 @@ class WowmaApi:
         query_string = urlencode(parameters)
         url = f'{WOWMA_ENDPOINT}searchItemInfos?{query_string}'
         response = requests.get(url, headers = self.get_headers(), proxies = __class__.proxies)
+        #print(response.content)
         response_parsed = ET.fromstring(response.content)
-        return WowmaItemSearchResult(response_parsed, limit, page)
-        
+        return ItemSearchResult(response_parsed, limit, page)
+    

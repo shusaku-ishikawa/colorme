@@ -1,0 +1,29 @@
+{% extends 'wowma_base_template.html' %}
+{% load wowmafilters %}
+{% load humanize %}
+{% block title %}
+  WOWMA DELETE
+{% endblock %}
+
+{% block wowma_content_style %}
+  <style>
+
+  </style>
+{% endblock %}
+
+
+{% block wowma_content %}
+本当に削除しますか?
+<form class="form" method="post">
+  {% csrf_token %}
+  <ul class="list-group">
+  {% for item in items_to_delete %}
+    <li class="list-group-item">item id: {{ item }}</li>
+    <input type="hidden" name="items_to_delete[]" value="{{ item }}">
+  {% endfor %}
+  </ul>
+  <button type="submit" class="btn btn-warning mt-2">削除</button>
+</form>
+{% endblock %}
+
+

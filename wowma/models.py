@@ -14,57 +14,59 @@ class AuthInfo(models.Model):
     )
 
 # Create your models here.
-class WowmaItem(object):   
+class Item(object):   
     def __init__(self, item_element):
-        self.lot_number = item_element.find('lotNumber').text
-        self.item_name = item_element.find('itemName').text
-        self.item_management_id = item_element.find('itemManagementId').text
-        self.item_management_name = item_element.find('itemManagementName').text
-        self.item_code = item_element.find('itemCode').text
-        self.item_price = item_element.find('itemPrice').text
-        self.sell_method_segment = item_element.find('sellMethodSegment').text
-        self.release_date = item_element.find('releaseDate').text
-        self.reserve_regst_date = item_element.find('reserveRegstDate').text
-        self.tas_segment = item_element.find('taxSegment').text
-        self.postage_segment = item_element.find('postageSegment').text
-        self.postage = item_element.find('postage').text
-        #print([f'{chi.tag} {chi.text}' for chi in item_element.getchildren()])
-        
-        self.deliverys = [self.Delivery(delivery) for delivery in item_element.findall('deliverys') if delivery.getchildren()]
-        self.delivery_method = [self.DeliveryMethod(delivery_method) for delivery_method in item_element.findall('deliveryMethod') if delivery_method.getchildren()]
-        self.public_start_date = item_element.find('publicStartDate').text
-        self.gift_packing_segment = item_element.find('giftPackingSegment').text
-        self.noshi_segment = item_element.find('noshiSegment').text
-        self.limited_order_segment = item_element.find('limitedOrderSegment').text
-        self.limited_order_count = item_element.find('limitedOrderCount').text
-        self.description = item_element.find('description').text
-        self.description_for_sp = item_element.find('descriptionForSP').text
-        self.description_for_pc = item_element.find('descriptionForPC').text
-        self.detail_title = item_element.find('detailTitle').text
-        self.detail_description = item_element.find('detailDescription').text
-        self.specs = [self.Spec(spec) for spec in item_element.findall('specs') if spec.getchildren()]
-        self.search_keywords = [self.SearchKeyword(search_keyword) for search_keyword in item_element.findall('searchKeywords') if search_keyword.getchildren()]
-        self.images = [self.Image(image) for image in item_element.findall('images') if image.getchildren()]
-        self.category_id = item_element.find('categoryId').text
-        self.category_name = item_element.find('ctgryName').text
-        self.tags = [self.Tag(tag) for tag in item_element.findall('tags') if tag.getchildren()]
-        self.shop_categorys = [self.ShopCategory(shop_category) for shop_category in item_element.findall('shopCategory') if shop_category.getchildren()]
-        self.jan = item_element.find('jan').text
-        self.isbn = item_element.find('isbn').text
-        self.item_model = item_element.find('itemModel').text
-        self.limited_password = item_element.find('limitedPasswd').text
-        self.limiete_password_page_title = item_element.find('limitedPasswdPageTitle').text
-        self.limited_password_page_messsage = item_element.find('limitedPasswdPageMessage').text
-        self.sale_status = item_element.find('saleStatus').text
-        self.item_options = [self.ItemOption(item_option) for item_option in item_element.findall('itemOptions') if item_option.getchildren()]
-        self.item_option_commissions = [self.ItemOptionCommission(item_option_commission) for item_option_commission in item_element.findall('itemOptionCommissions') if item_option_commission.getchildren()]
-        self.point_rate = item_element.find('pointRate').text
-        self.favorite_count = item_element.find('favoriteCount').text
-        self.receipt_request_count = item_element.find('receiptRequestCount').text
-        self.stock_request_config = item_element.find('stockRequestConfig').text
-        self.stock_request_count = item_element.find('stockRequestCount').text
-        self.register_stocks = [self.RegisterStock(register_stock) for register_stock in item_element.findall('registerStock') if register_stock.getchildren()]
-
+        if type(item_element) == str:
+            self.lot_number = item_element
+        else:
+            print(type(item_element))
+            self.lot_number = item_element.find('lotNumber').text
+            self.item_name = item_element.find('itemName').text
+            self.item_management_id = item_element.find('itemManagementId').text
+            self.item_management_name = item_element.find('itemManagementName').text
+            self.item_code = item_element.find('itemCode').text
+            self.item_price = item_element.find('itemPrice').text
+            self.sell_method_segment = item_element.find('sellMethodSegment').text
+            self.release_date = item_element.find('releaseDate').text
+            self.reserve_regst_date = item_element.find('reserveRegstDate').text
+            self.tas_segment = item_element.find('taxSegment').text
+            self.postage_segment = item_element.find('postageSegment').text
+            self.postage = item_element.find('postage').text
+            self.deliverys = [self.Delivery(delivery) for delivery in item_element.findall('deliverys') if delivery.getchildren()]
+            self.delivery_method = [self.DeliveryMethod(delivery_method) for delivery_method in item_element.findall('deliveryMethod') if delivery_method.getchildren()]
+            self.public_start_date = item_element.find('publicStartDate').text
+            self.gift_packing_segment = item_element.find('giftPackingSegment').text
+            self.noshi_segment = item_element.find('noshiSegment').text
+            self.limited_order_segment = item_element.find('limitedOrderSegment').text
+            self.limited_order_count = item_element.find('limitedOrderCount').text
+            self.description = item_element.find('description').text
+            self.description_for_sp = item_element.find('descriptionForSP').text
+            self.description_for_pc = item_element.find('descriptionForPC').text
+            self.detail_title = item_element.find('detailTitle').text
+            self.detail_description = item_element.find('detailDescription').text
+            self.specs = [self.Spec(spec) for spec in item_element.findall('specs') if spec.getchildren()]
+            self.search_keywords = [self.SearchKeyword(search_keyword) for search_keyword in item_element.findall('searchKeywords') if search_keyword.getchildren()]
+            self.images = [self.Image(image) for image in item_element.findall('images') if image.getchildren()]
+            self.category_id = item_element.find('categoryId').text
+            self.category_name = item_element.find('ctgryName').text
+            self.tags = [self.Tag(tag) for tag in item_element.findall('tags') if tag.getchildren()]
+            self.shop_categorys = [self.ShopCategory(shop_category) for shop_category in item_element.findall('shopCategory') if shop_category.getchildren()]
+            self.jan = item_element.find('jan').text
+            self.isbn = item_element.find('isbn').text
+            self.item_model = item_element.find('itemModel').text
+            self.limited_password = item_element.find('limitedPasswd').text
+            self.limiete_password_page_title = item_element.find('limitedPasswdPageTitle').text
+            self.limited_password_page_messsage = item_element.find('limitedPasswdPageMessage').text
+            self.sale_status = item_element.find('saleStatus').text
+            self.item_options = [self.ItemOption(item_option) for item_option in item_element.findall('itemOptions') if item_option.getchildren()]
+            self.item_option_commissions = [self.ItemOptionCommission(item_option_commission) for item_option_commission in item_element.findall('itemOptionCommissions') if item_option_commission.getchildren()]
+            self.point_rate = item_element.find('pointRate').text
+            self.favorite_count = item_element.find('favoriteCount').text
+            self.receipt_request_count = item_element.find('receiptRequestCount').text
+            self.stock_request_config = item_element.find('stockRequestConfig').text
+            self.stock_request_count = item_element.find('stockRequestCount').text
+            self.register_stocks = [self.RegisterStock(register_stock) for register_stock in item_element.findall('registerStock') if register_stock.getchildren()]
+            print(len(self.register_stocks))
     class Delivery:
         def __init__(self, delivery_element):
             
@@ -135,7 +137,7 @@ class WowmaItem(object):
             self.display_choices_stock_segment = register_stock_element.find('displayChoicesStockSegment').text
             self.display_chioces_stock_threshold = register_stock_element.find('displayChoicesStockThreshold').text
             self.display_backorder_message = register_stock_element.find('displayBackorderMessage').text
-
+            
         class ChoicesStockHorizontal:
             def __init__(self, choices_stock_horiontal_element):
                 self.choices_stock_horizontal_code = choices_stock_horiontal_element.find('choicesStockHorizontalCode').text
@@ -153,9 +155,23 @@ class WowmaItem(object):
                 self.choices_stock_count = choices_stock_element.find('choicesStockCount').text
                 self.choices_stock_shipping_day_id = choices_stock_element.find('choicesStockShippingDayId').text
                 self.chioces_stock_shipping_day_disp_txt = choices_stock_element.find('choicesStockShippingDayDispTxt').text
+    @property
+    def serialized_for_delete(self):
+        request = ET.Element('request')
+        shop_id = ET.SubElement(request, 'shopId')
+        shop_id.text = '111'
+        item_info = ET.SubElement(request, 'deleteItemInfo')
+        lot_number = ET.SubElement(item_info, 'lotNumber')
+        lot_number.text = self.lot_number
+        return ET.dump(request)
+        
+    def delete(self, authinfo):
+        print(self.serialized_for_delete)
+        # url = f'{WOWMA_ENDPOINT}deleteItemInfos/'
+        # response = requests.get(url, headers = self.get_headers(), proxies = __class__.proxies)
 
 import math
-class WowmaItemSearchResult(object):
+class ItemSearchResult(object):
     def __init__(self, response_parsed, limit, page):
         self.status = response_parsed.find('./result/status').text
         if self.status != API_STATUS_SUCCESS:
@@ -166,7 +182,7 @@ class WowmaItemSearchResult(object):
             result_count = response_parsed.find('./searchResult/resultCount').text
             max_count = response_parsed.find('./searchResult/maxCount').text
             self.pagination = self.Pagination(limit, page, int(max_count))            
-            self.items = [WowmaItem(item) for item in response_parsed.findall('./searchResult/resultItems')]
+            self.items = [Item(item) for item in response_parsed.findall('./searchResult/resultItems')]
             self.max_count = max_count
     class Error(object):
         def __init__(self, error_element):
@@ -210,8 +226,7 @@ class WowmaItemSearchResult(object):
                 print(margin)
                 left_offset -= margin
                 right_offset += margin
-            
-            
+           
             self.display_list = [index for index in range(self.current_page - left_offset, self.current_page + right_offset + 1)]
 
 class UploadFileColumns(object):
@@ -233,4 +248,29 @@ class UploadFileColumns(object):
     delivery_id = 15
     delivery_method_id_start = 16
     delivery_method_name_start = 21
+    sell_start_date = 26
+    sell_end_date = 27
+    countdown_timer_config = 28
+    sell_number_disp_config = 29
+    buy_num_limit_config = 30
+    buy_num_max = 31
+    public_start_date = 32
+    gift_packing_segment = 33
+    noshi_segment = 34
+    limited_order_segment = 35
+    limited_order_count = 36
+    description = 37
+    description_for_sp = 38
+    description_for_pc = 39
+    detail_title = 40
+    detail_description = 41
+    spec_title = 42
+    spec_start = 43
+    search_keyword_start = 48
+    search_target = 51
+    image_name_start = 52
+    image_url_start = 72
+
+
+
 

@@ -7,5 +7,6 @@ app_name = 'wowma'
 urlpatterns = [
     path('dashboard', views.DashBoard.as_view(), name = 'dashboard'),
     path('search', views.Search.as_view(), name = 'search'),
+    path('delete', views.Delete.as_view(), name = 'delete'),
     path('upload', views.Upload.as_view(), name = 'upload'),  
 ]

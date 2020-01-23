@@ -104,7 +104,7 @@ class Search(LoginRequiredMixin, TemplateView):
             q = request.session['q'] if 'q' in request.session else None
         context['q'] =  q        
         context['search_result'] = thebase_api.search_items(request.user.thebase_auth, q)
-
+        print(context["search_result"])
         return self.render_to_response(context)
 class Delete(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_delete.html'

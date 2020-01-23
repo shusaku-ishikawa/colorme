@@ -15,4 +15,11 @@ def times(number):
 def isnum(subj):
     return subj.isdigit()
 
+@register.filter 
+def stock_by_choice(obj, stock_key):
+    (vertical_key, horizontal_key) = stock_key.split('^')
+    return [s.choices_stock_count for s in obj.choices_stocks if s.choices_stock_horizontal_code == horizontal_key and s.choices_stock_vertical_code == vertical_key][0]
 
+@register.filter
+def left(value, l):
+    return f'{value[:l]}...' 

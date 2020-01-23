@@ -43,7 +43,7 @@
 
   {{ search_result.items|length }}件ヒットしました
   <form class="form-inline" method="get" action="{% url 'thebase:delete' %}">
-    <div class="form-group">
+    <div class="form-group my-2">
       <label for="id_operation">操作</label>
       <select name="operation" id="id_operation" class="form-control">
         <option value="delete">削除</option>

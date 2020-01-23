@@ -5,6 +5,7 @@ from django.conf import settings
 from .enums import *
 from .forms import *
 from core.models import *
+from .models import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 import csv
 from io import TextIOWrapper, StringIO
@@ -76,8 +77,30 @@ class Search(TemplateView):
                     page = int(page) 
             context['searchparams'] = searchparams        
             context['search_result'] = wowma_api.search_item_info(limit, page, searchparams)
-       
+            #print(context['search_result'].items[0])
         return self.render_to_response(context)
+
+class Delete(LoginRequiredMixin, TemplateView):
+    template_name = 'wowma_delete.html'
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        operation = request.GET.get('operation')
+        selected_items = request.GET.getlist('selected_items[]')
+        context['items_to_delete'] = selected_items
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        items_to_delete = request.POST.getlist('items_to_delete[]')
+        for item_id in items_to_delete:
+            item  = Item(item_id)
+            if not item.delete(request.user.wowma_auth):
+                messages.error(request, item.error)
+                print(item.error)
+            else: # if success
+                print('item successfully deleted')
+                messages.success(request, f'{item.item_id}を削除しました')
+        return redirect('wowma:search')
+
 
 class Upload(LoginRequiredMixin, TemplateView):
     template_name = 'wowma_upload.html'

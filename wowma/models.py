@@ -13,8 +13,28 @@ class AuthInfo(models.Model):
         max_length = 10,
     )
 
+
+def to_camel_case(snake_str):
+    components = snake_str.split('_')
+    return components[0] + ''.join(x.title() for x in components[1:])
+
+class XMLSerializable(object):
+    def serialize(self):
+        root = ET.Element(self.element_name)
+        for k in vars(self):
+            v = getattr(self, k)
+            if not v:
+                continue
+            if type(v) == list:
+                for child in v:
+                    root.append(child.serialize())
+            else:
+                sub = ET.SubElement(root, to_camel_case(k))
+                sub.text = v
+        return root
 # Create your models here.
-class Item(object):   
+class Item(XMLSerializable):
+    element_name = 'registerItem'
     def __init__(self, item_element):
         if type(item_element) == str:
             self.lot_number = item_element
@@ -40,8 +60,8 @@ class Item(object):
             self.limited_order_segment = item_element.find('limitedOrderSegment').text
             self.limited_order_count = item_element.find('limitedOrderCount').text
             self.description = item_element.find('description').text
-            self.description_for_sp = item_element.find('descriptionForSP').text
-            self.description_for_pc = item_element.find('descriptionForPC').text
+            self.description_forSP = item_element.find('descriptionForSP').text
+            self.description_forPC = item_element.find('descriptionForPC').text
             self.detail_title = item_element.find('detailTitle').text
             self.detail_description = item_element.find('detailDescription').text
             self.specs = [self.Spec(spec) for spec in item_element.findall('specs') if spec.getchildren()]
@@ -54,9 +74,9 @@ class Item(object):
             self.jan = item_element.find('jan').text
             self.isbn = item_element.find('isbn').text
             self.item_model = item_element.find('itemModel').text
-            self.limited_password = item_element.find('limitedPasswd').text
-            self.limiete_password_page_title = item_element.find('limitedPasswdPageTitle').text
-            self.limited_password_page_messsage = item_element.find('limitedPasswdPageMessage').text
+            self.limited_passwd = item_element.find('limitedPasswd').text
+            self.limited_passwd_page_title = item_element.find('limitedPasswdPageTitle').text
+            self.limited_passwd_page_messsage = item_element.find('limitedPasswdPageMessage').text
             self.sale_status = item_element.find('saleStatus').text
             self.item_options = [self.ItemOption(item_option) for item_option in item_element.findall('itemOptions') if item_option.getchildren()]
             self.item_option_commissions = [self.ItemOptionCommission(item_option_commission) for item_option_commission in item_element.findall('itemOptionCommissions') if item_option_commission.getchildren()]
@@ -67,59 +87,89 @@ class Item(object):
             self.stock_request_count = item_element.find('stockRequestCount').text
             self.register_stocks = [self.RegisterStock(register_stock) for register_stock in item_element.findall('registerStock') if register_stock.getchildren()]
             print(len(self.register_stocks))
-    class Delivery:
+    class Delivery(XMLSerializable):
+        element_name = 'deliverys'
         def __init__(self, delivery_element):
-            
             self.delivery_id = delivery_element.find('deliveryId').text
             self.delivery_seq = delivery_element.find('deliverySeq').text
-    class DeliveryMethod:
+    class DeliveryMethod(XMLSerializable):
+        element_name = 'deliveryMethod'
         def __init__(self, delivery_method_element):
             self.delivery_method_id = delivery_method_element.find('deliveryMethodId').text
             self.delivery_method_seq = delivery_method_element.find('deliveryMethodSeq').text
             self.delivery_method_name = delivery_method_element.find('deliveryMethodName').text
-    class Spec:
+    class Spec(XMLSerializable):
+        element_name = 'specs'
+        def serialize(self):
+            root = ET.Element(self.element_name)
+            for k in vars(self):
+                v = getattr(self, k)
+                if type(v) == list:
+                    for child in v:
+                        root.append(child.serialize())
+                else:
+                    sub = ET.SubElement(root, to_camel_case(k))
+                    sub.text = v
+                subelem = ET.SubElement(root, to_camel_case(k))
+                subelem.text = v
+            return root
         def __init__(self, spec_element):
             self.spec_title = spec_element.find('specTitle').text
             self.detail_specs = [self.DetailSpec(detail_spec) for detail_spec in spec_element.findall('detailSpecs') if detail_spec.getchildren()]
         class DetailSpec:
+            def serialize(self):
+                root = ET.Element('detailSpecs')
+                for k in vars(self):
+                    v = getattr(self, k)
+                    sub = ET.SubElement(root, to_camel_case(k))
+                    sub.text = v
+                return root
             def __init__(self, detail_spec):
                 self.spec_name = detail_spec.find('specName').text
                 self.spec = detail_spec.find('spec').text
                 self.spec_seq = detail_spec.find('specSeq').text
-    class SearchKeyword:
+    class SearchKeyword(XMLSerializable):
+        element_name = 'searchKeywords'
         def __init__(self, search_keyword_element):
             self.search_keyword = search_keyword_element.find('searchKeyword').text
             self.search_keyword_seq = search_keyword_element.find('searchKeywordSeq').text
-    class Image:
+    class Image(XMLSerializable):
+        element_name = 'images'
         def __init__(self, item_element):
             self.image_url = item_element.find('imageUrl').text
             self.image_name = item_element.find('imageName').text
             self.imange_seq = item_element.find('imageSeq').text
-    class Tag:
+    class Tag(XMLSerializable):
+        element_name = 'tags'
         def __init__(self, tag_element):
             self.tag_id = tag_element.find('tagId').text
-    class ShopCategory:
+    class ShopCategory(XMLSerializable):
+        element_name = 'shopCategory'
         def __init__(self, shop_category_element):
             self.shop_category_name = shop_category_element.find('shopCategoryName').text if 'shopCategoryName' in shop_category_element else None
             self.shop_category_disp_seq = shop_category_element.find('shopCategoryDispSeq').text if 'shopCategoryDispSeq' in shop_category_element else None
-    class ItemOption:
+    class ItemOption(XMLSerializable):
+        element_name = 'itemOptions'
         def __init__(self, item_option_element):
             self.item_option_title = item_option_element.find('itemOptionTitle').text
             self.item_option = item_option_element.find('itemOption').text
             self.item_option_seq = item_option_element.find('itemOptionSeq').text
-    class ItemOptionCommission:
+    class ItemOptionCommission(XMLSerializable):
+        element_name = 'itemOptionCommissions'
         def __init__(self, item_option_element):
             self.item_option_commission_title = item_option_element.find('itemOptionCommissionTitle').text
             self.item_option_commission_vals = [self.ItemOptionCommission(item_option_commission) for item_option_commission in item_option_element.findall('itemOptionCommissionVal') if item_option_commission.getchildren()]
             self.item_option_commission_note = item_option_element.find('itemOptionCommissionNote').text
             self.item_option_commission_seq = item_option_element.find('itemOptionCommissionSeq').text
 
-        class ItemOptionCommission:
+        class ItemOptionCommission(XMLSerializable):
+            element_name = 'itemOptionCommissionVal'
             def __init__(self, item_option_cmmission_value_element):
                 self.item_option_commission = item_option_cmmission_value_element.find('itemOptionCommission').text
                 self.item_option_commission_price = item_option_cmmission_value_element.find('itemOptionCommissionPrice').text
                 self.item_option_commission_val_seq = item_option_cmmission_value_element.find('itemOptionCommissionValSeq').text
-    class RegisterStock:
+    class RegisterStock(XMLSerializable):
+        element_name = 'registerStock'
         def __init__(self, register_stock_element):
             self.stock_segment = register_stock_element.find('stockSegment').text
             self.stock_count = register_stock_element.find('stockCount').text if 'stockCount' in register_stock_element else None
@@ -138,35 +188,46 @@ class Item(object):
             self.display_chioces_stock_threshold = register_stock_element.find('displayChoicesStockThreshold').text
             self.display_backorder_message = register_stock_element.find('displayBackorderMessage').text
             
-        class ChoicesStockHorizontal:
+        class ChoicesStockHorizontal(XMLSerializable):
+            element_name = 'choicesStockHorizontals'
             def __init__(self, choices_stock_horiontal_element):
                 self.choices_stock_horizontal_code = choices_stock_horiontal_element.find('choicesStockHorizontalCode').text
                 self.choices_stock_horizontal_name = choices_stock_horiontal_element.find('choicesStockHorizontalName').text
                 self.choices_stock_horizontal_seq = choices_stock_horiontal_element.find('choicesStockHorizontalSeq').text
-        class ChoicesStockVertical:        
+        class ChoicesStockVertical(XMLSerializable):
+            element_name = 'choicesStockVerticals' 
             def __init__(self, choices_stock_vertical_element):
                 self.choices_stock_vertical_code = choices_stock_vertical_element.find('choicesStockVerticalCode').text
                 self.choices_stock_vertical_name = choices_stock_vertical_element.find('choicesStockVerticalName').text
                 self.choices_stock_vertical_seq = choices_stock_vertical_element.find('choicesStockVerticalSeq').text
-        class ChoicesStock:
+        class ChoicesStock(XMLSerializable):
+            element_name = 'choicesStocks'
             def __init__(self, choices_stock_element):
                 self.choices_stock_horizontal_code = choices_stock_element.find('choicesStockHorizontalCode').text
                 self.choices_stock_vertical_code = choices_stock_element.find('choicesStockVerticalCode').text
                 self.choices_stock_count = choices_stock_element.find('choicesStockCount').text
                 self.choices_stock_shipping_day_id = choices_stock_element.find('choicesStockShippingDayId').text
                 self.chioces_stock_shipping_day_disp_txt = choices_stock_element.find('choicesStockShippingDayDispTxt').text
-    @property
-    def serialized_for_delete(self):
+    
+    def serialize_for_delete(self, shop_id):
         request = ET.Element('request')
         shop_id = ET.SubElement(request, 'shopId')
-        shop_id.text = '111'
+        shop_id.text = shop_id
         item_info = ET.SubElement(request, 'deleteItemInfo')
         lot_number = ET.SubElement(item_info, 'lotNumber')
         lot_number.text = self.lot_number
         return ET.dump(request)
-        
+
+    def serialize_for_add(self, shop_id):
+        request = ET.Element('request')
+        shop_id = ET.SubElement(request, 'shopId')
+        shop_id.text = shop_id
+        register_item = ET.SubElement(request, 'registerItem')
+        for k in vars(self):
+            v = getattr(self, k)
+            print(f'{k} {v}')
     def delete(self, authinfo):
-        print(self.serialized_for_delete)
+        print(self.serialize_for_add('hoge'))
         # url = f'{WOWMA_ENDPOINT}deleteItemInfos/'
         # response = requests.get(url, headers = self.get_headers(), proxies = __class__.proxies)
 

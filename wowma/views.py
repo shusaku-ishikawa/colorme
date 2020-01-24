@@ -77,7 +77,7 @@ class Search(TemplateView):
                     page = int(page) 
             context['searchparams'] = searchparams        
             context['search_result'] = wowma_api.search_item_info(limit, page, searchparams)
-            #print(context['search_result'].items[0])
+            print(ET.tostring(context['search_result'].items[0].serialize()))
         return self.render_to_response(context)
 
 class Delete(LoginRequiredMixin, TemplateView):

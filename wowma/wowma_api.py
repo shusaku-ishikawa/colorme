@@ -4,7 +4,6 @@ import xml.etree.ElementTree as ET
 from .models import Item, ItemSearchResult
 from .enums import *
 import os
-from dicttoxml import dicttoxml
 
 
 class WowmaApi:

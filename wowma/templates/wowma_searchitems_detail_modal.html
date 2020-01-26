@@ -5,10 +5,22 @@
   <div class="overLay modalClose"></div>
     <!-- モーダルウィンドウの中身 -->
   <div class="modal-content">
-    <h3 class="modal-h">Description</h3>
-    <div class="modal-text">
-      {{ object.description|safe }}
-    </div>
+      <div class="modal-text">
+        <h3 class="modal-h">Description</h3>
+        {{ object.description|safe }}
+      </div>
+    <hr>
+      <div class="modal-text">
+        <h3 class="modal-h">Description for PC</h3>
+      
+        {{ object.description_forPC|safe }}
+      </div>
+    <hr>
+      <div class="modal-text">
+        <h3 class="modal-h">Description For SP</h3>
+        {{ object.description_forSP|safe }}
+      </div>
+    <hr>
     <div class="modal-f">
       <a href="" class="modalClose btn btn-primary mb-2">Close</a>
     </div>
@@ -38,7 +50,6 @@
   text-align: center;
 }
 .modal-content {
-  
   margin:3rem auto;
   width: 70%;
   height: 85%;

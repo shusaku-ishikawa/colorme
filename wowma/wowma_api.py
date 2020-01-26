@@ -10,14 +10,13 @@ class WowmaApi:
     proxies = {
         'https': 'http://user:332191-Aa@stoneriver.info:8081'
     }
-    
     def __init__(self, auth_info):
         self.application_key = auth_info.application_key
         self.store_id = auth_info.store_id
 
-    def get_headers(self):
+    def get_headers(self, content_type):
         return {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': content_type,
             'Authorization': f'Bearer {self.application_key}'
         }
     
@@ -35,8 +34,58 @@ class WowmaApi:
 
         query_string = urlencode(parameters)
         url = f'{WOWMA_ENDPOINT}searchItemInfos?{query_string}'
-        response = requests.get(url, headers = self.get_headers(), proxies = __class__.proxies)
-        #print(response.content)
+        response = requests.get(url, headers = self.get_headers('application/x-www-form-urlencoded'), proxies = self.proxies)
         response_parsed = ET.fromstring(response.content)
         return ItemSearchResult(response_parsed, limit, page)
-    
+
+    def register_item(self, item):
+        url = f'{WOWMA_ENDPOINT}registerItemInfo/'
+        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.store_id, mode = API_MODE_REGISTER))
+        response_parsed = ET.fromstring(response.content)
+        result_status = response_parsed.find('./result/status').text
+        if result_status == API_STATUS_ERROR:     
+            error = response_parsed.find('./registerResult/error')
+            error_code = error.find('./code').text
+            error_message = error.find('./message').text
+            item.valid = False
+            item.error = f'{error_code}:{error_message}'
+        else:
+            # if success
+            item.valid = True
+        print(ET.tostring(response_parsed, encoding='utf-8').decode())
+        return item.valid
+
+    def update_item(self, item):
+        url = f'{WOWMA_ENDPOINT}updateItemInfo/'
+        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.store_id, mode = API_MODE_UPDATE))
+        response_parsed = ET.fromstring(response.content)
+        result_status = response_parsed.find('./result/status').text      
+        if result_status == API_STATUS_ERROR:     
+            error = response_parsed.find('./updateResult/error')
+            error_code = error.find('./code').text
+            error_message = error.find('./message').text
+            item.valid = False
+            item.error = f'{error_code}:{error_message}'
+        else:
+            # if success
+            item.valid = True
+        print(ET.tostring(response_parsed, encoding='utf-8').decode())
+        return item.valid
+
+    def delete_item(self, item):
+        url = f'{WOWMA_ENDPOINT}deleteItemInfos/'
+        print(item.create_params(self.store_id, mode = API_MDOE_DELETE))
+        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.store_id, mode = API_MDOE_DELETE))
+        response_parsed = ET.fromstring(response.content)
+        result_status = response_parsed.find('./result/status').text      
+        if result_status == API_STATUS_ERROR:     
+            error = response_parsed.find('./deleteResult/error')
+            error_code = error.find('./code').text
+            error_message = error.find('./message').text
+            item.valid = False
+            item.error = f'{error_code}:{error_message}'
+        else:
+            # if success
+            item.valid = True
+        print(ET.tostring(response_parsed, encoding='utf-8').decode())
+        return item.valid

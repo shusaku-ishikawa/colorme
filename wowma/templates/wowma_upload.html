@@ -7,20 +7,25 @@
 
 {% block wowma_content_style %}
   <style>
-
+    .form {
+      width: 600px;;
+    }
   </style>
 {% endblock %}
 
 {% block wowma_content %}
-<form class="form-inline" method="post" enctype="multipart/form-data">
+<form class="form" method="post" enctype="multipart/form-data">
   {% csrf_token %}
   <input type="hidden" name="action" value="upload">
-    <div class="form-group">
-    <div class="ml-2 mr-2">
-      <input type="file" name="uploadfile" class="form-control" id="id-uploadfile">
-    </div>
+  <div class="form-group">
+    <label for="id-item-csv">item.csv</label>
+    <input type="file" name="item_csv" class="form-control" id="id-item-csv">
   </div>
-    <button type="submit" class="btn btn-success">アップロード</button>
+  <div class="form-group">
+    <label for="id-stock-csv">stock.csv</label>
+    <input type="file" name="stock_csv" class="form-control" id="id-stock-csv">
+  </div>
+  <button type="submit" class="btn btn-success">アップロード</button>
 </form>
 {% if errors %}
   <table class="table">
@@ -47,5 +52,27 @@
     </tbody>
   </table>
 {% endif %}
+{% endblock %}
+{% block wowma_script %}
+<script>
+  $(function () {
+    var $form = $('.form');
+    $form.on('submit', function() {
+      var $item_csv_file = $(this).find('#id-item-csv');
+      var $stock_csv_file = $(this).find('#id-stock-csv');
+      if ($item_csv_file.prop('files').length == 0) {
+        alert('item.csvを選択してください')
+        $item_csv_file.focus();
+        return false
+      }
+      if ($stock_csv_file.prop('files').length == 0) {
+        alert('stock.csvを選択してください')
+        $stock_csv_file.focus();
+        return false
+      }
+      return true;
+    });
+  });
+</script>
 {% endblock %}
 

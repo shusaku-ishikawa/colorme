@@ -12,7 +12,7 @@
       margin-right:0;
       max-width: 100%!important;
     }
-    td {
+    th, td {
       white-space: nowrap;
     }
     img.item-thumbnail {
@@ -44,6 +44,8 @@
       <label for="id_operation">操作</label>
       <select name="operation" id="id_operation" class="form-control">
         <option value="delete">削除</option>
+        <option value="offsale">出品停止</option>
+        <option value="onsale">出品</option>
       </select>
       <button type="submit" class="btn btn-warning">実行</button>
     </div>
@@ -52,6 +54,9 @@
         <thead class="thead-dark">
           <th>
             <input type="checkbox" id="id_check_all" class="">
+          </th>
+          <th>
+            sale status
           </th>
           <th>
             Lot number
@@ -91,6 +96,13 @@
               <td>
                 <input type="checkbox" class="form-control select-checkbox" name="selected_items[]" value="{{ object.lot_number }}">
               </td>
+              <td>
+                {% if object.sale_status == '1' %}
+                  <span class="badge badge-success">{{ object.sale_status | display_sale_status }}</span>
+                {% else %}
+                  <span class="badge badge-dark">{{ object.sale_status | display_sale_status }}</span>
+                {% endif %}
+                </td>
               <td>
                 {{ object.lot_number }}
               </td>

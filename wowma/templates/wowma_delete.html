@@ -13,16 +13,17 @@
 
 
 {% block wowma_content %}
-本当に削除しますか?
+本当に{{ operation }}しますか?
 <form class="form" method="post">
   {% csrf_token %}
+  <input type="hidden" name="operation" value="{{ operation }}">
   <ul class="list-group">
-  {% for item in items_to_delete %}
-    <li class="list-group-item">item id: {{ item }}</li>
-    <input type="hidden" name="items_to_delete[]" value="{{ item }}">
+  {% for item in selected_items %}
+    <li class="list-group-item">lot number: {{ item }}</li>
+    <input type="hidden" name="selected_items[]" value="{{ item }}">
   {% endfor %}
   </ul>
-  <button type="submit" class="btn btn-warning mt-2">削除</button>
+  <button type="submit" class="btn btn-warning mt-2">{{ operation }}</button>
 </form>
 {% endblock %}
 

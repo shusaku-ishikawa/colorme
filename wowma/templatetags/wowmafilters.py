@@ -6,6 +6,9 @@ register = template.Library()
 @register.filter
 def display_sell_method(value):
     return SELL_METHODS.get(value)
+@register.filter
+def display_sale_status(value):
+    return SALE_STATUS.get(value)
 
 @register.filter 
 def times(number):

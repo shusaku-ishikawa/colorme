@@ -77,7 +77,6 @@ class Search(TemplateView):
                     page = int(page) 
             context['searchparams'] = searchparams        
             context['search_result'] = wowma_api.search_item_info(limit, page, searchparams)
-            print(ET.tostring(context['search_result'].items[0].serialize()))
         return self.render_to_response(context)
 
 class Delete(LoginRequiredMixin, TemplateView):
@@ -86,19 +85,29 @@ class Delete(LoginRequiredMixin, TemplateView):
         context = self.get_context_data(**kwargs)
         operation = request.GET.get('operation')
         selected_items = request.GET.getlist('selected_items[]')
-        context['items_to_delete'] = selected_items
+        context['selected_items'] = selected_items
+        context['operation'] = operation
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        items_to_delete = request.POST.getlist('items_to_delete[]')
-        for item_id in items_to_delete:
-            item  = Item(item_id)
-            if not item.delete(request.user.wowma_auth):
+        selected_items = request.POST.getlist('selected_items[]')
+        operation = request.POST.get('operation')
+
+        wowma_api = WowmaApi(request.user.wowma_auth)
+
+        for lot_number in selected_items:
+            item  = Item(lot_number)
+            if operation == 'delete':
+                func = wowma_api.delete_item
+            elif operation in ['offsale', 'onsale']:
+                item.sale_status = SALE_STATUS_ONSALE if operation == 'onsale' else SALE_STATUS_OFFSALE
+                func = wowma_api.update_item
+
+            if not func(item):
                 messages.error(request, item.error)
                 print(item.error)
             else: # if success
-                print('item successfully deleted')
-                messages.success(request, f'{item.item_id}を削除しました')
+                messages.success(request, f'{item.lot_number}を{operation}しました')
         return redirect('wowma:search')
 
 
@@ -113,60 +122,85 @@ class Upload(LoginRequiredMixin, TemplateView):
         context['pagename'] = 'upload'
         return super().render_to_response(context)
     
-    def dictize_params(self, cols):
-        ret = {}
-        ret['item_id'] = cols[UploadFileColumns.item_id]
-        ret['identifier'] = cols[UploadFileColumns.identifier]
-        ret['category_id'] = cols[UploadFileColumns.category_id]
-        ret['title'] = cols[UploadFileColumns.title]
-        ret['price'] = cols[UploadFileColumns.price]
-        ret['item_tax_type'] = cols[UploadFileColumns.item_tax_type]
-        ret['detail'] = cols[UploadFileColumns.detail]
-        ret['variations'] = [{'variation_id': cols[UploadFileColumns.variation_start + 2*i], 'variation': cols[UploadFileColumns.variation_start + 2*i + 1], 'variation_stock': cols[UploadFileColumns.variation_stock_start + i]} for i in range(20) if cols[UploadFileColumns.variation_start + 2*i + 1] != '']
-        for i in range(20):
-            if not cols[UploadFileColumns.img_origin_start + i] or cols[UploadFileColumns.img_origin_start + i] == '':
-                break
-            key = f'img{i + 1}_origin'
-            ret[key] = cols[UploadFileColumns.img_origin_start + i]
-        ret['stock'] = cols[UploadFileColumns.stock]
-        ret['list_order'] = cols[UploadFileColumns.list_order]
-        ret['visible'] = cols[UploadFileColumns.visible]
-        ret['delivery_company_id'] = cols[UploadFileColumns.delivery_company_id]
-        return ret
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        f = request.FILES.get('uploadfile')
-        form_data = TextIOWrapper(f, encoding='utf-8')
-        csv_file = csv.reader(form_data)
+        item_csv = request.FILES.get('item_csv')
+        stock_csv = request.FILES.get('stock_csv')
+        item_csv_data = csv.reader(TextIOWrapper(item_csv, encoding='cp932'))
+        stock_csv_data = csv.reader(TextIOWrapper(stock_csv, encoding='cp932'))
+
         items_to_register = []
 
-        all_ok = True
-        for index, line in enumerate(csv_file):
+        for index, line in enumerate(item_csv_data):
             if index == 0:
                 continue
-            param_dict = self.dictize_params(line)
-            item = Item(param_dict)
-            if not item.validate_for_add(index):
-                all_ok = False
+            item = Item(line)
             items_to_register.append(item)
+        
+        for index, line in enumerate(stock_csv_data):
+            if index == 0:
+                continue
+            target_item = [item for item in items_to_register if item.item_code == line[StockCols.ITEM_CODE]][0]
+            for register_stock in target_item.register_stocks:
+                register_stock.stock_segment = line[StockCols.STOCK_SEGMENT]
+                register_stock.stock_count = line[StockCols.STOCK_COUNT]
+                choices_stock_dict = {
+                    'choices_stock_horizontal': {
+                        'choices_stock_horizontal_code': line[StockCols.CHIOCES_STOCK_HORIZONTAL_CODE],
+                        'choices_stock_horizontal_name': line[StockCols.CHOICES_STOCK_HORIZONTAL_NAME],
+                        'choices_stock_horizontal_seq': line[StockCols.CHOICES_STOCK_HORIZONTAL_SEQ],
+                    },
+                    'choices_stock_vertical': {
+                        'choices_stock_vertical_code': line[StockCols.CHIOCES_STOCK_VERTICAL_CODE],
+                        'choices_stock_vertical_name': line[StockCols.CHOICES_STOCK_VERTICAL_NAME],
+                        'choices_stock_vertical_seq': line[StockCols.CHOICES_STOCK_VERTICAL_SEQ],
+                    },
+                    'choices_stock_shipping_day_id': line[StockCols.CHOICES_STOCK_SHIPPING_DAY_ID],
+                    'choices_stock_count': line[StockCols.CHOICES_STOCK_COUNT]
+                }
+            
+                register_stock.add_choices_stock(choices_stock_dict)
+        all_ok = True
+        for index, item in enumerate(items_to_register):
+            if not item.validate_for_add(index + 1):
+                all_ok = False
+                print(f'{item.item_code} {item.error}')
+
         if not all_ok:
+            for item in items_to_register:
+                print(f'{item.item_name} {item.error}')
             messages.error(request, 'ファイルにエラーがありました')
             context['errors'] = [item for item in items_to_register if not item.valid]
             return self.render_to_response(context)
         else:
+            # if all ok
+            wowma_api = WowmaApi(request.user.wowma_auth)
             for item in items_to_register:
-                if item.valid:
-                    if not item.item_id: # if new
-                        item.add(request.user.wowma_auth)
-                    else: # if edit
-                        item.edit(request.user.wowma_auth)
-            runtimeerrors = [item for item in items_to_register if not item.valid]
-            if len(runtimeerrors) > 0:
+                if not wowma_api.register_item(item):
+                    all_ok = False
+            if not all_ok:
+                context['errors'] = [item for item in items_to_register if not item.valid]
                 messages.error(request, '登録時にエラーがありました')
-                context['errors'] = runtimeerrors
                 return self.render_to_response(context)
             else:
                 messages.success(request, '登録が完了しました')
                 return redirect('wowma:upload')
+            
+
+
+            # for item in items_to_register:
+            #     if item.valid:
+            #         if not item.item_id: # if new
+            #             item.add(request.user.wowma_auth)
+            #         else: # if edit
+            #             item.edit(request.user.wowma_auth)
+            # runtimeerrors = [item for item in items_to_register if not item.valid]
+            # if len(runtimeerrors) > 0:
+            #     messages.error(request, '登録時にエラーがありました')
+            #     context['errors'] = runtimeerrors
+            #     return self.render_to_response(context)
+            # else:
+            messages.success(request, '登録が完了しました')
+            return redirect('wowma:upload')
 
             

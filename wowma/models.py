@@ -434,7 +434,6 @@ class Item(XMLSerializable):
             }))
                  
         def validate_for_add(self, index):
-            print('validate override ')
             if not self.stock_segment:
                 self.valid = False
                 self.error = 'stock_segmentは必須です'
@@ -505,8 +504,6 @@ class ItemSearchResult(object):
             
             self.pagination = self.Pagination(limit, page, int(max_count))            
             self.items = [Item(item) for item in response_parsed.findall('./searchResult/resultItems')]
-            print(ET.tostring(response_parsed.findall('./searchResult/resultItems/description')[0], encoding='utf-8').decode('utf-8'))
-            #print(ET.tostring(response_parsed.findall('./searchResult/resultItems/description')[1], encoding='utf-8').decode('utf-8'))
             
             self.max_count = max_count
     class Error(object):

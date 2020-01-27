@@ -9,10 +9,12 @@ from .models import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 import csv
 from io import TextIOWrapper, StringIO
+
 from django.contrib import messages
+
+
 class DashBoard(LoginRequiredMixin, TemplateView):
     template_name = 'wowma_dashboard.html'
-     
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         context['pagename'] = 'dashboard'
@@ -113,93 +115,60 @@ class Delete(LoginRequiredMixin, TemplateView):
 
 class Upload(LoginRequiredMixin, TemplateView):
     template_name = 'wowma_upload.html'
-    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = UploadedFileModelForm()
+        return context
     def get(self, request, *args, **kwargs):
         if not request.user.wowma_auth:
             messages.error(request, '認証情報が登録されていません')
             return redirect('wowma:dashboard')
-        context = super().get_context_data(**kwargs)
+        context = self.get_context_data(**kwargs)
         context['pagename'] = 'upload'
         return super().render_to_response(context)
     
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        item_csv = request.FILES.get('item_csv')
-        stock_csv = request.FILES.get('stock_csv')
-        item_csv_data = csv.reader(TextIOWrapper(item_csv, encoding='cp932'))
-        stock_csv_data = csv.reader(TextIOWrapper(stock_csv, encoding='cp932'))
-
-        items_to_register = []
-
-        for index, line in enumerate(item_csv_data):
-            if index == 0:
-                continue
-            item = Item(line)
-            items_to_register.append(item)
-        
-        for index, line in enumerate(stock_csv_data):
-            if index == 0:
-                continue
-            target_item = [item for item in items_to_register if item.item_code == line[StockCols.ITEM_CODE]][0]
-            for register_stock in target_item.register_stocks:
-                register_stock.stock_segment = line[StockCols.STOCK_SEGMENT]
-                register_stock.stock_count = line[StockCols.STOCK_COUNT]
-                choices_stock_dict = {
-                    'choices_stock_horizontal': {
-                        'choices_stock_horizontal_code': line[StockCols.CHIOCES_STOCK_HORIZONTAL_CODE],
-                        'choices_stock_horizontal_name': line[StockCols.CHOICES_STOCK_HORIZONTAL_NAME],
-                        'choices_stock_horizontal_seq': line[StockCols.CHOICES_STOCK_HORIZONTAL_SEQ],
-                    },
-                    'choices_stock_vertical': {
-                        'choices_stock_vertical_code': line[StockCols.CHIOCES_STOCK_VERTICAL_CODE],
-                        'choices_stock_vertical_name': line[StockCols.CHOICES_STOCK_VERTICAL_NAME],
-                        'choices_stock_vertical_seq': line[StockCols.CHOICES_STOCK_VERTICAL_SEQ],
-                    },
-                    'choices_stock_shipping_day_id': line[StockCols.CHOICES_STOCK_SHIPPING_DAY_ID],
-                    'choices_stock_count': line[StockCols.CHOICES_STOCK_COUNT]
-                }
-            
-                register_stock.add_choices_stock(choices_stock_dict)
+        form = UploadedFileModelForm(request.POST, request.FILES)
+        if not form.is_valid():
+            context['form'] = form
+            return self.render_to_response(context)
+        uploaded_file = form.save(commit = True)
+        items_to_register = uploaded_file.get_item_objects()
         all_ok = True
         for index, item in enumerate(items_to_register):
             if not item.validate_for_add(index + 1):
+                error_record = UploadFileErrorRecord()
+                error_record.parent_file = uploaded_file
+                error_record.timing = TIMING_VALIDATION
+                error_record.line_number = index + 1
+                error_record.error_message = item.error
+                error_record.save()
                 all_ok = False
-                print(f'{item.item_code} {item.error}')
-
+       
         if not all_ok:
-            for item in items_to_register:
-                print(f'{item.item_name} {item.error}')
             messages.error(request, 'ファイルにエラーがありました')
-            context['errors'] = [item for item in items_to_register if not item.valid]
+            context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
             return self.render_to_response(context)
         else:
             # if all ok
             wowma_api = WowmaApi(request.user.wowma_auth)
-            for item in items_to_register:
+            for index, item in enumerate(items_to_register):
                 if not wowma_api.register_item(item):
+                    error_record = UploadFileErrorRecord()
+                    error_record.parent_file = uploaded_file
+                    error_record.timing = TIMING_RUNTIME
+                    error_record.line_number = index + 1
+                    error_record.error_message = item.error
+                    error_record.save()
                     all_ok = False
             if not all_ok:
-                context['errors'] = [item for item in items_to_register if not item.valid]
+                context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
                 messages.error(request, '登録時にエラーがありました')
                 return self.render_to_response(context)
             else:
                 messages.success(request, '登録が完了しました')
                 return redirect('wowma:upload')
-            
-
-
-            # for item in items_to_register:
-            #     if item.valid:
-            #         if not item.item_id: # if new
-            #             item.add(request.user.wowma_auth)
-            #         else: # if edit
-            #             item.edit(request.user.wowma_auth)
-            # runtimeerrors = [item for item in items_to_register if not item.valid]
-            # if len(runtimeerrors) > 0:
-            #     messages.error(request, '登録時にエラーがありました')
-            #     context['errors'] = runtimeerrors
-            #     return self.render_to_response(context)
-            # else:
             messages.success(request, '登録が完了しました')
             return redirect('wowma:upload')
 

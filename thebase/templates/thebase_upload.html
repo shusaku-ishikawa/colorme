@@ -7,20 +7,23 @@
 
 {% block thebase_content_style %}
   <style>
-
+    form {
+      width: 450px;
+    }
   </style>
 {% endblock %}
 
 {% block thebase_content %}
-<form class="form-inline" method="post" enctype="multipart/form-data">
+<form class="form" method="post" enctype="multipart/form-data">
   {% csrf_token %}
   <input type="hidden" name="action" value="upload">
-    <div class="form-group">
-    <div class="ml-2 mr-2">
-      <input type="file" name="uploadfile" class="form-control" id="id-uploadfile">
-    </div>
+  {{ form.non_field_errors }}
+  <div class="form-group">
+    <label>{{ form.item_csv.label }}:</label>
+    {{ form.item_csv }}
+    {{ form.errors.item_csv }}
   </div>
-    <button type="submit" class="btn btn-primary">アップロード</button>
+  <button type="submit" class="btn btn-primary my-1">アップロード</button>
 </form>
 {% if errors %}
   <table class="table">
@@ -29,6 +32,10 @@
       <th>
         行
       </th>
+      <th>
+        タイミング
+      </th>
+      
       <th>
         内容
       </th>
@@ -40,7 +47,10 @@
           {{ er.line_number }}
         </td>
         <td>
-          {{ er.error }}
+          {{ er.timing }}
+        </td>
+        <td>
+          {{ er.error_message }}
         </td>
       </tr>
       {% endfor  %}

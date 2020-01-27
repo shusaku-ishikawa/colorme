@@ -1,6 +1,7 @@
 from django.db import models
 import xml.etree.ElementTree as ET
 from .enums import *
+import csv
 
 class AuthInfo(models.Model):
     def __str__(self):
@@ -13,6 +14,86 @@ class AuthInfo(models.Model):
         max_length = 10,
     )
 
+class UploadedFile(models.Model):
+    item_csv = models.FileField(
+        verbose_name = 'item csv',
+        upload_to = 'item_csv'
+    )
+    stock_csv = models.FileField(
+        verbose_name = 'stock csv',
+        upload_to = 'stock_csv'
+    )
+    item_count = models.IntegerField(
+        verbose_name = '登録商品数'
+    )
+    uploaded_at = models.DateTimeField(
+        verbose_name = '登録日',
+        auto_now_add = True
+    )
+    processed_at = models.DateTimeField(
+        verbose_name = '処理日',
+        null = True,
+        blank = True
+    )
+    def get_item_objects(self):
+        items_to_register = []
+
+        with open(self.item_csv.path) as f:
+            reader = csv.reader(f)
+            for index, line in enumerate(reader):
+                if index == 0:
+                    continue
+                item = Item(line)
+                items_to_register.append(item)
+
+        with open(self.stock_csv.path) as f:
+            reader = csv.reader(f)
+            for index, line in enumerate(reader):
+                if index == 0:
+                    continue
+                target_items = [item for item in items_to_register if item.item_code == line[StockCols.ITEM_CODE]]
+                if len(target_items) == 0:
+                    continue
+                target_item = target_items[0]
+                for register_stock in target_item.register_stocks:
+                    register_stock.stock_segment = line[StockCols.STOCK_SEGMENT]
+                    register_stock.stock_count = line[StockCols.STOCK_COUNT]
+                    choices_stock_dict = {
+                        'choices_stock_horizontal': {
+                            'choices_stock_horizontal_code': line[StockCols.CHIOCES_STOCK_HORIZONTAL_CODE],
+                            'choices_stock_horizontal_name': line[StockCols.CHOICES_STOCK_HORIZONTAL_NAME],
+                            'choices_stock_horizontal_seq': line[StockCols.CHOICES_STOCK_HORIZONTAL_SEQ],
+                        },
+                        'choices_stock_vertical': {
+                            'choices_stock_vertical_code': line[StockCols.CHIOCES_STOCK_VERTICAL_CODE],
+                            'choices_stock_vertical_name': line[StockCols.CHOICES_STOCK_VERTICAL_NAME],
+                            'choices_stock_vertical_seq': line[StockCols.CHOICES_STOCK_VERTICAL_SEQ],
+                        },
+                        'choices_stock_shipping_day_id': line[StockCols.CHOICES_STOCK_SHIPPING_DAY_ID],
+                        'choices_stock_count': line[StockCols.CHOICES_STOCK_COUNT]
+                    }
+                    register_stock.add_choices_stock(choices_stock_dict)
+        return items_to_register
+        
+class UploadFileErrorRecord(models.Model):
+    parent_file = models.ForeignKey(
+        verbose_name = '親ファイル',
+        to = UploadedFile,
+        on_delete = models.CASCADE
+    )
+    timing = models.CharField(
+        verbose_name = 'エラータイミング',
+        max_length = 100
+    )
+    line_number = models.IntegerField(
+        verbose_name = '行番号',
+    )
+    error_message = models.CharField(
+        verbose_name = 'エラー',
+        null = True,
+        blank = True,
+        max_length = 255
+    )
 
 def to_camel_case(snake_str):
     components = snake_str.split('_')
@@ -37,6 +118,10 @@ class XMLSerializable(object):
             self.required_for_add = list(vars(self))
         self.line_number = index
         for f in self.required_for_add:
+            if not f in vars(self):
+                self.valid = False
+                self.error = f'[{self.__class__}]{f}は必須です'
+                return self.valid
             val = getattr(self, f)
             if val == None:
                 self.valid = False
@@ -458,7 +543,8 @@ class Item(XMLSerializable):
                         'choices_stock_verticals',
                         'choices_stocks'
                     ]
-                    super().validate_for_add(index) # required fields check
+                    if not super().validate_for_add(index): # required fields check
+                        return self.valid
                     # duplicate sequence check
                     choices_stock_horizontal_seq_list = [h.choices_stock_horizontal_seq for h in self.choices_stock_horizontals]
                     choices_stock_vertical_seq_list = [v.choices_stock_vertical_seq for v in self.choices_stock_verticals]

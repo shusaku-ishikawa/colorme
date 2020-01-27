@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 import datetime
 from .enums import *
-import os, json
+import os, json, csv
 
 # Create your models here.
 class Oauth(models.Model):
@@ -83,6 +83,78 @@ class Oauth(models.Model):
     def refresh_if_necessary(self):
         if not self.access_token_valid:
             self.get_access_token(GRANT_TYPE_REFRESH_TOKEN)
+
+class UploadedFile(models.Model):
+    item_csv = models.FileField(
+        verbose_name = 'item csv',
+        upload_to = 'item_csv'
+    )
+    item_count = models.IntegerField(
+        verbose_name = '登録商品数'
+    )
+    uploaded_at = models.DateTimeField(
+        verbose_name = '登録日',
+        auto_now_add = True
+    )
+    processed_at = models.DateTimeField(
+        verbose_name = '処理日',
+        null = True,
+        blank = True
+    )
+    def dictize_params(self, cols):
+        ret = {}
+        ret['item_id'] = cols[ItemCols.item_id]
+        ret['identifier'] = cols[ItemCols.identifier]
+        ret['category_id'] = cols[ItemCols.category_id].splitlines()
+        ret['title'] = cols[ItemCols.title]
+        ret['price'] = cols[ItemCols.price]
+        ret['item_tax_type'] = cols[ItemCols.item_tax_type]
+        ret['detail'] = cols[ItemCols.detail]
+        ret['variations'] = [{'variation_id': cols[ItemCols.variation_start + 2*i], 'variation': cols[ItemCols.variation_start + 2*i + 1], 'variation_stock': cols[ItemCols.variation_stock_start + i]} for i in range(20) if cols[ItemCols.variation_start + 2*i + 1] != '']
+        for i in range(20):
+            if not cols[ItemCols.img_origin_start + i] or cols[ItemCols.img_origin_start + i] == '':
+                break
+            key = f'img{i + 1}_origin'
+            ret[key] = cols[ItemCols.img_origin_start + i]
+        ret['stock'] = cols[ItemCols.stock]
+        ret['list_order'] = cols[ItemCols.list_order]
+        ret['visible'] = cols[ItemCols.visible]
+        ret['delivery_company_id'] = cols[ItemCols.delivery_company_id]
+        return ret
+
+    def get_item_objects(self):
+        items_to_register = []
+        with open(self.item_csv.path, encoding="utf-8") as f:
+            reader = csv.reader(f)
+            for index, line in enumerate(reader):
+                if index == 0:
+                    continue
+                param_dict = self.dictize_params(line)
+                item = Item(param_dict)
+                if not item.validate_for_add(index):
+                    all_ok = False
+                items_to_register.append(item)
+        return items_to_register
+class UploadFileErrorRecord(models.Model):
+    parent_file = models.ForeignKey(
+        verbose_name = '親ファイル',
+        to = UploadedFile,
+        on_delete = models.CASCADE
+    )
+    timing = models.CharField(
+        verbose_name = 'エラータイミング',
+        max_length = 100
+    )
+    line_number = models.IntegerField(
+        verbose_name = '行番号',
+    )
+    error_message = models.CharField(
+        verbose_name = 'エラー',
+        null = True,
+        blank = True,
+        max_length = 255
+    )
+
 class Item(object):
     required_fields = [
         'title',
@@ -99,6 +171,7 @@ class Item(object):
         elif type(item_dict) == dict:
             self.item_id = item_dict['item_id']
             self.title = item_dict['title']
+            self.category_id = item_dict['category_id'] if 'category_id'  in item_dict else None
             self.detail = item_dict['detail']
             self.price = item_dict['price']
             self.proper_price = item_dict['proper_price'] if 'proper_price' in item_dict else None
@@ -197,11 +270,17 @@ class Item(object):
         oauth.refresh_if_necessary()
         url = f'{THEBASE_ENDPOINT}1/items/delete_variation'
         return requests.post(url, {'item_id':self.item_id,'variation_id':variation_id}, headers = self.get_header(oauth.access_token)).json()
-    def add_item_category(self, oauth):
+    
+    def get_item_categories(self, oauth):
+        oauth.refresh_if_necessary()    
+        url = f'{THEBASE_ENDPOINT}/1/item_categories/detail/{self.item_id}'
+        return requests.get(url, headers = self.get_header(oauth.access_token)).json()
+        
+    def add_item_category(self, oauth, item_category_id):
         oauth.refresh_if_necessary()
         url = f'{THEBASE_ENDPOINT}1/item_categories/add'
-        return requests.post(url, {'item_id':self.item_id, 'category_id': self.category_id}, headers = self.get_header(oauth.access_token)).json()
-
+        return requests.post(url, {'item_id':self.item_id, 'category_id': item_category_id}, headers = self.get_header(oauth.access_token)).json()
+        
     def delete_item_category(self, oauth, item_category_id):
         oauth.refresh_if_necessary()
         url = f'{THEBASE_ENDPOINT}1/item_categories/delete'
@@ -249,17 +328,24 @@ class Item(object):
             item_json = response_json['item']
             self.item_id = item_json['item_id']
             
-            # set category
-            category_response_json = self.add_item_category(oauth)
-            if not self.validate_response(category_response_json):
-                print(self.error)
+            # get current categories
+            item_category_json = self.get_item_categories(oauth)
+            if not self.validate_response(item_category_json):
                 return False
-            else:
-                for ic in category_response_json['item_categories']:
-                    if ic['category_id'] != self.category_id:
-                        category_response_json = self.delete_item_category(oauth, ic['item_category_id'])
-                        self.validate_response(category_response_json)
-            
+            item_categories = [ic['category_id'] for ic in item_category_json['item_categories']]
+            print(f'current category {item_categories}' )
+
+            new_categories = list(set(self.category_id) - set(item_categories))
+            old_categories = list(set(item_categories) - set(self.category_id))
+            # set category
+            for new_ic in new_categories:
+                if not self.validate_response(self.add_item_category(oauth, new_ic)):
+                    return False
+            for old_ic in old_categories:
+                old_item_category_id = [ic["item_category_id"] for ic in item_category_json if ic['item_category'] == old_ic][0]
+                if not self.validate_response(self.delete_item_category(oauth, old_item_category_id)):
+                    return False
+
             # add images if changed
             for i in range(20):
                 #### image #####
@@ -319,18 +405,3 @@ class ItemSearchResult(object):
             self.code = error_dict['error']
             self.description = error_dict['error_description']
 
-class UploadFileColumns(object):
-    item_id = 0
-    identifier = 1
-    category_id = 2
-    title = 3
-    price = 4
-    item_tax_type = 5
-    detail = 6
-    variation_start = 7
-    stock = 47
-    list_order = 48
-    visible = 49
-    delivery_company_id = 50
-    img_origin_start = 51
-    variation_stock_start = 71

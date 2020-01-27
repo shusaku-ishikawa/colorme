@@ -7,6 +7,11 @@
 
 {% block wowma_content_style %}
   <style>
+        
+    div.table-responsive {
+      width: 100%;
+      height: 70vh;
+    }
     .container {
       margin-left: 0;
       margin-right:0;
@@ -19,6 +24,7 @@
       width: 100px;
       height: auto;
     }
+    table#id_item_table thead th { position: sticky; top: 0; }
   </style>
 {% endblock %}
 
@@ -50,7 +56,7 @@
       <button type="submit" class="btn btn-warning">実行</button>
     </div>
     <div class="table-responsive">
-      <table class="table table-bordered table-striped">
+      <table id="id_item_table" class="table table-bordered table-striped">
         <thead class="thead-dark">
           <th>
             <input type="checkbox" id="id_check_all" class="">

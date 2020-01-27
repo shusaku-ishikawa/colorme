@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, FormView
 from .thebase_api import thebase_api
 from django.conf import settings
-from .models import Oauth, UploadFileColumns, Item
+from .models import *
 from core.models import User
 from .enums import *
 from django.contrib import messages
@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 import csv
 from io import TextIOWrapper, StringIO
-from .forms import OauthModelForm
+from .forms import *
 class DashBoard(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_dashboard.html'
      
@@ -130,65 +130,68 @@ class Delete(LoginRequiredMixin, TemplateView):
 class Upload(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_upload.html'
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = UploadedFileModelForm()
+        return context
+
     def get(self, request, *args, **kwargs):
         if not request.user.thebase_auth or not request.user.thebase_auth.access_token:
             messages.error(request, 'アクセストークンが発行されていません')
             return redirect('thebase:dashboard')
-        context = super().get_context_data(**kwargs)
+        context = self.get_context_data(**kwargs)
         context['pagename'] = 'upload'
         return super().render_to_response(context)
     
-    def dictize_params(self, cols):
-        ret = {}
-        ret['item_id'] = cols[UploadFileColumns.item_id]
-        ret['identifier'] = cols[UploadFileColumns.identifier]
-        ret['category_id'] = cols[UploadFileColumns.category_id]
-        ret['title'] = cols[UploadFileColumns.title]
-        ret['price'] = cols[UploadFileColumns.price]
-        ret['item_tax_type'] = cols[UploadFileColumns.item_tax_type]
-        ret['detail'] = cols[UploadFileColumns.detail]
-        ret['variations'] = [{'variation_id': cols[UploadFileColumns.variation_start + 2*i], 'variation': cols[UploadFileColumns.variation_start + 2*i + 1], 'variation_stock': cols[UploadFileColumns.variation_stock_start + i]} for i in range(20) if cols[UploadFileColumns.variation_start + 2*i + 1] != '']
-        for i in range(20):
-            if not cols[UploadFileColumns.img_origin_start + i] or cols[UploadFileColumns.img_origin_start + i] == '':
-                break
-            key = f'img{i + 1}_origin'
-            ret[key] = cols[UploadFileColumns.img_origin_start + i]
-        ret['stock'] = cols[UploadFileColumns.stock]
-        ret['list_order'] = cols[UploadFileColumns.list_order]
-        ret['visible'] = cols[UploadFileColumns.visible]
-        ret['delivery_company_id'] = cols[UploadFileColumns.delivery_company_id]
-        return ret
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        f = request.FILES.get('uploadfile')
-        form_data = TextIOWrapper(f, encoding='utf-8')
-        csv_file = csv.reader(form_data)
-        items_to_register = []
-
+        form = UploadedFileModelForm(request.POST, request.FILES)
+        if not form.is_valid():
+            context['form'] = form
+            return self.render_to_response(context)
+        uploaded_file = form.save(commit = True)
+        
+        items_to_register = uploaded_file.get_item_objects()
         all_ok = True
-        for index, line in enumerate(csv_file):
-            if index == 0:
-                continue
-            param_dict = self.dictize_params(line)
-            item = Item(param_dict)
-            if not item.validate_for_add(index):
+        
+        for index, item in enumerate(items_to_register):
+            if not item.validate_for_add(index + 1):
+                error_record = UploadFileErrorRecord()
+                error_record.parent_file = uploaded_file
+                error_record.timing = TIMING_VALIDATION
+                error_record.line_number = index + 1
+                error_record.error_message = item.error
+                error_record.save()
                 all_ok = False
-            items_to_register.append(item)
+
         if not all_ok:
             messages.error(request, 'ファイルにエラーがありました')
-            context['errors'] = [item for item in items_to_register if not item.valid]
+            context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
             return self.render_to_response(context)
         else:
             for item in items_to_register:
                 if item.valid:
                     if not item.item_id: # if new
-                        item.add(request.user.thebase_auth)
+                        if not item.add(request.user.thebase_auth):
+                            error_record = UploadFileErrorRecord()
+                            error_record.parent_file = uploaded_file
+                            error_record.timing = TIMING_RUNTIME
+                            error_record.line_number = item.line_number
+                            error_record.error_message = item.error
+                            error_record.save()
+                            all_ok = False
                     else: # if edit
-                        item.edit(request.user.thebase_auth)
-            runtimeerrors = [item for item in items_to_register if not item.valid]
-            if len(runtimeerrors) > 0:
+                        if not item.edit(request.user.thebase_auth):
+                            error_record = UploadFileErrorRecord()
+                            error_record.parent_file = uploaded_file
+                            error_record.timing = TIMING_RUNTIME
+                            error_record.line_number = item.line_number
+                            error_record.error_message = item.error
+                            error_record.save()
+                            all_ok = False
+            if not all_ok:
                 messages.error(request, '登録時にエラーがありました')
-                context['errors'] = runtimeerrors
+                context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
                 return self.render_to_response(context)
             else:
                 messages.success(request, '登録が完了しました')

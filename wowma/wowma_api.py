@@ -52,7 +52,6 @@ class WowmaApi:
         else:
             # if success
             item.valid = True
-        print(ET.tostring(response_parsed, encoding='utf-8').decode())
         return item.valid
 
     def update_item(self, item):
@@ -69,12 +68,10 @@ class WowmaApi:
         else:
             # if success
             item.valid = True
-        print(ET.tostring(response_parsed, encoding='utf-8').decode())
         return item.valid
 
     def delete_item(self, item):
         url = f'{WOWMA_ENDPOINT}deleteItemInfos/'
-        print(item.create_params(self.store_id, mode = API_MDOE_DELETE))
         response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.store_id, mode = API_MDOE_DELETE))
         response_parsed = ET.fromstring(response.content)
         result_status = response_parsed.find('./result/status').text      
@@ -87,5 +84,4 @@ class WowmaApi:
         else:
             # if success
             item.valid = True
-        print(ET.tostring(response_parsed, encoding='utf-8').decode())
         return item.valid

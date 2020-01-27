@@ -20,6 +20,11 @@ SALE_STATUS = {
     SALE_STATUS_OFFSALE: '販売停止中'
 }
 
+TIMING_VALIDATION = 'validation'
+TIMING_RUNTIME = 'runtime'
+
+CSV_TYPE_ITEM = 'item'
+CSV_TYPE_STOCK = 'stock'
 
 
 STOCK_SEGMENT_NO_CHOICE = '1'
@@ -29,6 +34,8 @@ DISPLAY_STOCK_SEGMENT_YES = '2'
 DISPLAY_STOCK_SEGMENT_OCCASOINAL = '3'
 
 class ItemCols:
+    COLUMN_COUNT = 209
+
     CTRL_COL = 0
     LOT_NUMBER = 1
     ITEM_NAME = 2
@@ -101,6 +108,8 @@ class ItemCols:
     DISPLAY_CHOICES_STOCK_THRESHOLD = 208
 
 class StockCols:
+    COLUMN_COUNT = 14
+    
     CTRL_COL = 0
     ITEM_CODE = 1
     STOCK_SEGMENT = 2

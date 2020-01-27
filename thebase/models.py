@@ -277,6 +277,7 @@ class Item(object):
         return requests.get(url, headers = self.get_header(oauth.access_token)).json()
         
     def add_item_category(self, oauth, item_category_id):
+        print('add item category')
         oauth.refresh_if_necessary()
         url = f'{THEBASE_ENDPOINT}1/item_categories/add'
         return requests.post(url, {'item_id':self.item_id, 'category_id': item_category_id}, headers = self.get_header(oauth.access_token)).json()
@@ -308,6 +309,13 @@ class Item(object):
         else:
             item_json = response_json['item']
             self.item_id = item_json['item_id']
+            # categories
+            for category_id in self.category_id:
+                category_respnose = self.add_item_category(oauth, category_id)
+                if not self.validate_response(category_respnose):
+                    return False
+        
+            # images
             for i in range(20):
                 image_no = i + 1
                 image_url = getattr(self, f'img{image_no}_origin')
@@ -332,7 +340,7 @@ class Item(object):
             item_category_json = self.get_item_categories(oauth)
             if not self.validate_response(item_category_json):
                 return False
-            item_categories = [ic['category_id'] for ic in item_category_json['item_categories']]
+            item_categories = [str(ic['category_id']) for ic in item_category_json['item_categories']]
             print(f'current category {item_categories}' )
 
             new_categories = list(set(self.category_id) - set(item_categories))

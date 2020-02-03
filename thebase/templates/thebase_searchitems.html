@@ -18,7 +18,6 @@
     img.thumbnail {
       width: 100px;
     }
-    table#id_item_table thead th { position: sticky; top: 0; }
   </style>
 {% endblock %}
 
@@ -33,15 +32,11 @@
   </div>
     <button type="submit" class="btn btn-primary">検索</button>
 </form>
-{% if search_result.error %}
-  {{ search_result.error.code }} {{ search_result.error.message }}
-{% elif search_result.items != None %}
-  
-  {% if search_result.items|length == 0 %}
+
+  {% if not object_list %}
     該当する商品が見つかりませんでした
   {% else %}
 
-  {{ search_result.items|length }}件ヒットしました
   <form class="form-inline" method="get" action="{% url 'thebase:delete' %}">
     <div class="form-group my-2">
       <label for="id_operation">操作</label>
@@ -52,61 +47,43 @@
     </div>
     <div class="table-responsive">
       <table id="id_item_table" class="table table-bordered table-striped mt-2">
-        <thead class="thead-dark">
+        <thead>
           <th>
             <input type="checkbox" id="id_check_all" class="">
           </th>
           <th>
-            img1_origin
+            商品画像
           </th>
           <th>
-            itemid
+            商品ID
           </th>
           <th>
-            title
+            商品名
           </th>
           <th>
-            detail
+            商品説明
           </th>
           <th>
-            price
+            価格
           </th>
           <th>
-            proper_price
+            表示
           </th>
           <th>
-            item_tax_type
-          </th>
-          <th>
-            stock
-          </th>
-          <th>
-            visible
-          </th>
-          <th>
-            list_order
-          </th>
-          <th>
-            identifier
-          </th>
-         
-          <th>
-            modified
-          </th>
-          <th>
-            variations
+            バリエーション
           </th>
         </thead>
         <tbody>
-          {% for object in search_result.items %}
+          {% for object in object_list %}
             <tr>
               <td>
                 <input type="checkbox" class="form-control select-checkbox" name="selected_items[]" value="{{ object.item_id }}">
               </td>
               <td>
-                <img src="{{ object.img1_origin }}" class="thumbnail">
+                <img class="img-thumbnail" src="{{ object.images.0 }}" alt="商品画像"><br>
                 {% include 'thebase_searchitems_images_modal.html' with images=object.images %}
-                <button class="image-modal-open btn btn-primary">全て表示</button>
+                <button class="image-modal-open btn btn-sm btn-primary">全て表示</button>
+                
               </td>
               <td>
                 {{ object.item_id }}
@@ -122,49 +99,32 @@
                 {{ object.price|intcomma }}
               </td>
               <td>
-                {{ object.proper_price|default_if_none:'-' }}
-              </td>
-              <td>
-                {{ object.item_tax_type |tax_type }}
-              </td>
-              <td>
-                {{ object.stock }}
-              </td>
-              <td>
                 {{ object.visible_readable }}
               </td>
-              <td>
-                {{ object.list_order }}
-              </td>
-              <td>
-                {{ object.identifier|default_if_none:'-' }}
-              </td>
-              
-              <td>
-                {{ object.modified | todatetime | date:"Y/n/j H:i:s"  }}
-              </td>
+             
               <td>
                 <table class="table table-sm">
                   <thead>
                     <th>id</th>
                     <th>variation</th>
                     <th>stock</th>
+                    <th>identifier</th>
                   </thead>
                   <tbody>
-                    {% for var in object.variations %}
+                    {% for var in object.variations.all %}
                     <tr>
-
                       <td>
-                        {{ var.variation_id }}
+                        {{ var.variation_id}}
                       </td>
-                      
                       <td>
                         {{ var.variation }}
                       </td>
                       <td>
                         {{ var.variation_stock }}
                       </td>
-                      
+                      <td>
+                        {{ var.variation_identifier }}
+                      </td>
                     </tr>
                     {% endfor %}
                   </tbody>
@@ -176,9 +136,10 @@
         </tbody>
       </table>
     </div>
+    {% include 'pagination.html' %}
   </form>
   {% endif %}
-  {% endif %}
+  
 {% endblock %}
 {% block thebase_script %}
 <script>

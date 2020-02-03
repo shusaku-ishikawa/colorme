@@ -1,0 +1,71 @@
+<style>
+  #sidebar {
+    width:100%;
+    min-height: 95vh;
+    height: 100%;
+  }
+  
+  #sidebar {
+    /* don't forget to add all the previously mentioned styles here too */
+    background: teal;
+    color: #fff;
+    transition: all 0.3s;
+  }
+
+  #sidebar .sidebar-header {
+      padding: 20px;
+      background: teal;
+  }
+
+  #sidebar ul.components {
+      padding: 20px 0;
+      border-bottom: 1px solid teal;
+  }
+  #sidebar ul li a {
+      padding: 10px;
+      font-size: 1.1em;
+      display: block;
+      color: white;
+      text-decoration: none;
+  }
+  #sidebar ul li a:hover {
+      color: #7386D5;
+      background: #fff;
+  }
+  #sidebar ul li.active > a, a[aria-expanded="true"] {
+      color: #fff;
+      background:lightgreen;
+  }
+  </style>
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <h3>メニュー</h3>
+    </div>
+    <ul class="list-unstyled components">
+      <li class="{% if pagename == 'colorme_job' %}active{% endif %}">
+        <a href="{% url 'colorme:job' %}">JOB</a>
+      </li>
+      <li class="{% if pagename == 'colorme_search' %}active{% endif %}">
+        <a href="{% url 'colorme:search' %}">カラーミー商品検索</a>
+      </li>
+      <li class="{% if pagename == 'colorme_upload' %}active{% endif %}">
+        <a href="{% url 'colorme:upload' %}">カラーミーCSV登録</a>
+      </li>
+      <li class="{% if pagename == 'thebase_dashboard' %}active{% endif %}">
+        <a href="{% url 'thebase:dashboard' %}">BASE認証情報</a>
+      </li>
+      <li class="{% if pagename == 'thebase_search' %}active{% endif %}">
+        <a href="{% url 'thebase:search' %}">BASE商品検索</a>
+      </li>
+      <li class="{% if pagename == 'thebase_categories' %}active{% endif %}">
+        <a href="{% url 'thebase:categories' %}">BASEカテゴリ一覧</a>
+      </li>
+      <li class="{% if pagename == 'wowma_dashboard' %}active{% endif %}">
+        <a href="{% url 'wowma:dashboard' %}">Wowma認証情報</a>
+      </li>
+      <li class="{% if pagename == 'wowma_search' %}active{% endif %}">
+        <a href="{% url 'wowma:search' %}">Wowma商品検索</a>
+      </li>
+    </ul>
+  </nav>
+  

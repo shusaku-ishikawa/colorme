@@ -1,0 +1,176 @@
+{% extends 'colorme_base_template.html' %}
+{% load colormefilters %}
+{% load humanize %}
+{% block title %}
+  BASE ITEMS
+{% endblock %}
+
+{% block colorme_content_style %}
+  <style>
+    div.table-responsive {
+      width: 100%;
+      height: 70vh;
+    }
+    table td {
+      white-space: nowrap;
+    }
+
+    #id_check_all {
+      margin-bottom: 5px;
+      margin-left: 7px;
+    }
+  </style>
+{% endblock %}
+
+{% block colorme_content %}
+<form class="form-inline">
+  <input type="hidden" name="action" value="search">
+    <div class="form-group">
+    <label for="id-itemname">q(スペース区切り):</label>
+    <div class="ml-2 mr-2">
+      <input type="text" name="q" class="form-control" id="id-q" value="{{ q | default_if_none:'' }}">
+    </div>
+  </div>
+    <button type="submit" class="btn btn-primary">検索</button>
+</form>
+
+  {% if not object_list %}
+    該当する商品が見つかりませんでした
+  {% else %}
+
+  <form class="form-inline" method="get" action="{% url 'colorme:delete' %}">
+    <div class="form-group my-2">
+      <label for="id_operation">操作</label>
+      <select name="operation" id="id_operation" class="form-control">
+        <option value="delete">削除</option>
+      </select>
+      <button type="submit" class="btn btn-warning">実行</button>
+    </div>
+    <div class="table-responsive">
+      <table id="id_item_table" class="table mt-2 item_table">
+        <thead>
+          <th>
+            <input type="checkbox" id="id_check_all" class="">
+          </th>
+          <th>
+            画像
+          </th>
+          <th>
+            商品ID
+          </th>
+          <th>
+            型番
+          </th>
+          <th>
+            商品名
+          </th>
+          <th>
+            カテゴリ（大）
+          </th>
+          <th>
+            カテゴリ（小）
+          </th>
+          <th>
+            商品説明
+          </th>
+          <th>
+            商品説明(BASE)
+          </th>
+          <th>
+            販売価格
+          </th>
+          <th>
+            オプション
+          </th>
+        </thead>
+        <tbody>
+          {% for object in object_list %}
+            <tr>
+              <td>
+                <input type="checkbox" class="form-control select-checkbox" name="selected_items[]" value="{{ object.item_id }}">
+              </td>
+              <td>
+               
+                <img class="img-thumbnail" alt="extra" src="{{ object.image_url }}"><br>
+                {% include 'colorme_searchitems_images_modal.html' with images=object.images %}
+                <button class="image-modal-open btn btn-sm btn-primary">全て表示</button>
+              </td>
+              <td>
+                {{ object.item_id }}
+              </td>
+              <td>
+                {{ object.kataban | default_if_none:'-' }}
+              </td>
+              <td>
+                {{ object.item_name }}
+              </td>
+              <td>
+                {{ object.category_1 | default_if_none:'-' }}
+              </td>
+              <td>
+                {{ object.category_2 | default_if_none:'-' }}
+              </td>
+              <td>
+                {% include 'colorme_searchitems_detail_modal.html' with text=object.description %}
+                <button class="modal-open btn btn-sm btn-primary" type="button">表示</button>
+              </td>
+              <td>
+                {% include 'colorme_searchitems_detail_modal.html' with text=object.custom_description %}
+                <button class="modal-open btn btn-sm btn-primary" type="button">表示</button>
+              </td>
+              <td>
+                ¥{{ object.sell_price|intcomma }}
+              </td> 
+              <td>
+                {% if object.options.all %}
+                <table class="table table-sm">
+                  <thead>
+                    <th>
+                      option1
+                    </th>
+                    <th>
+                      option2
+                    </th>
+                    <th>
+                      option id
+                    </th>
+                    <th>
+                      在庫
+                    </th>
+                  </thead>
+                  <tbody>
+                    {% for op in object.options.all %}
+                    <tr>
+                      <td>{{ op.option_1_value }}</td>
+                      <td>{{ op.option_2_value | default_if_none:'-' }}</td>
+                      <td>{{ op.option_id }}</td>
+                      <td>{{ op.stock_count }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% else %}
+                --
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include 'pagination.html' %}
+  </form>
+  {% endif %}
+  
+{% endblock %}
+{% block colorme_script %}
+<script>
+  $(function () {
+    var $checkbox = $('.select-checkbox');
+    var $check_all = $('#id_check_all');
+    $check_all.on('change', function() {
+      $checkbox.prop('checked', $(this).prop('checked'));
+    });
+  });
+</script>
+{% endblock %}

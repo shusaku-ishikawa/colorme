@@ -24,5 +24,6 @@ urlpatterns = [
     url(r'^inventory/core/', include('core.urls')),
     url(r'^inventory/wowma/', include('wowma.urls')),
     url(r'^inventory/thebase/', include('thebase.urls')),
+    url(r'^inventory/colorme/', include('colorme.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # 追加
 

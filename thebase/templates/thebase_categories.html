@@ -1,0 +1,102 @@
+{% extends 'thebase_base_template.html' %}
+{% load thebasefilters %}
+{% load humanize %}
+{% block title %}
+  BASE Category
+{% endblock %}
+
+{% block thebase_content_style %}
+  <style>
+    div.table-responsive {
+      width: 100%;
+      height: 70vh;
+    }
+    table td {
+      white-space: nowrap;
+      
+    }
+    img.thumbnail {
+      width: 100px;
+    }
+  </style>
+{% endblock %}
+
+{% block thebase_content %}
+  
+  <form class="form-inline" method="get" action="{% url 'thebase:delete_categories' %}">
+    <div class="form-group my-2">
+      <label for="id_operation">操作</label>
+      <select name="operation" id="id_operation" class="form-control">
+        <option value="delete">削除</option>
+      </select>
+      <button type="submit" class="btn btn-warning">実行</button>
+    </div>
+    {% if not object_list %}
+      カテゴリが見つかりませんでした
+    {% else %}
+    <div class="table-responsive">
+      <table id="" class="table table-bordered table-striped mt-2">
+        <thead>
+          <th>
+            <input type="checkbox" id="id_check_all" class="">
+          </th>
+          <th>
+            カテゴリID
+          </th>
+          <th>
+            カテゴリ名
+          </th>
+          <th>
+            カテゴリ番号
+          </th>
+          <th>
+            親カテゴリ番号
+          </th>
+          <th>
+            コード
+          </th>
+        </thead>
+        <tbody>
+          {% for object in object_list %}
+            <tr>
+              <td>
+                <input type="checkbox" class="form-control select-checkbox" name="selected_categories[]" value="{{ object.category_id }}">
+              </td>
+            <td>
+              {{ object.category_id }}
+            </td>
+            <td>
+              {{ object.name }}
+            </td>
+            <td>
+              {{ object.number }}
+            </td>
+            <td>
+              {% if object.parent_number == 0 %}
+              --
+              {% else %}
+              {{ object.parent_number }}
+              {% endif %}
+            </td>
+            <td>
+              {{ object.code }}
+            </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+  {% endif %}
+{% endblock %}
+{% block thebase_script %}
+<script>
+  $(function () {
+    var $checkbox = $('.select-checkbox');
+    var $check_all = $('#id_check_all');
+    $check_all.on('change', function() {
+      $checkbox.prop('checked', $(this).prop('checked'));
+    });
+  });
+</script>
+{% endblock %}

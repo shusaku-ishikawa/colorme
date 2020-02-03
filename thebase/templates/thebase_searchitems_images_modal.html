@@ -9,11 +9,10 @@
     <div class="modal-text container">
       <div class="row">
         
-        {% for image_name, image_url in images %}
+        {% for image_url in images %}
         <div class="col-2">
           <figure class="figure">
             <img src="{{ image_url }}" class="thumbnail">
-            <figcaption class="figure-caption">{{ image_name}}</figcaption>
           </figure>
         </div>
         {% endfor %}

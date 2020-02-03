@@ -4,7 +4,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from thebase.models import Oauth as thebase_Oauth
 from django.utils.translation import ugettext_lazy as _
 from wowma.models import AuthInfo as wowma_Auth
-from thebase.models import Oauth as thebase_Auth
+#from thebase.models import Oauth as thebase_Auth
 
 
 class UserManager(BaseUserManager):
@@ -43,8 +43,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.username
     username = models.CharField(_('username'), max_length = 100, primary_key = True)
-    wowma_auth = models.OneToOneField(to = wowma_Auth, null = True, blank =True, on_delete = models.SET_NULL)
-    thebase_auth = models.OneToOneField(to = thebase_Auth, null = True, blank = True, on_delete = models.SET_NULL)
+    wowma_auth = models.OneToOneField(to = 'wowma.AuthInfo', null = True, blank =True, on_delete = models.SET_NULL)
+    thebase_auth = models.OneToOneField(to = 'thebase.Oauth', null = True, blank = True, on_delete = models.SET_NULL)
     
 
     is_staff = models.BooleanField(

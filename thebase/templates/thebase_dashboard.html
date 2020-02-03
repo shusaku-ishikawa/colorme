@@ -35,9 +35,9 @@
         <td>
           {% if user.thebase_auth.authorization_code %}
             {{ user.thebase_auth.authorization_code }}
-            <a href="{% url 'thebase:authorize' %}" class="btn btn-primary">再認可</a>
+            <a href="{% url 'thebase:authorize' %}" class="btn btn-sm btn-primary">再認可</a>
           {% else %}
-            まだ認可されていません<a href="{% url 'thebase:authorize' %}" class="btn btn-primary">認可</a>
+            まだ認可されていません<a href="{% url 'thebase:authorize' %}" class="btn btn-sm btn-primary">認可</a>
           {% endif %}
         </td>
       </tr>
@@ -51,7 +51,7 @@
             {% else %}
              <span class="badge badge-danger">期限切れ</span>
             {% endif %}
-            <a class="btn btn-primary" href='{% url 'thebase:authorize' %}?refresh=true'>リフレッシュ</a>
+            <a class="btn btn-sm btn-primary" href='{% url 'thebase:authorize' %}?refresh=true'>リフレッシュ</a>
           {% else %}
             --
           {% endif %}

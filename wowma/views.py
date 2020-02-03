@@ -17,7 +17,7 @@ class DashBoard(LoginRequiredMixin, TemplateView):
     template_name = 'wowma_dashboard.html'
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        context['pagename'] = 'dashboard'
+        context['pagename'] = 'wowma_dashboard'
         context['form'] = AuthInfoModelForm()
 
         return self.render_to_response(context)
@@ -48,7 +48,11 @@ class DashBoard(LoginRequiredMixin, TemplateView):
            pass
 class Search(TemplateView):
     template_name = 'wowma_searchitems.html'
-     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pagename'] = 'wowma_search'
+        return context
+
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         limit = ITEMS_PER_PAGE
@@ -112,64 +116,6 @@ class Delete(LoginRequiredMixin, TemplateView):
                 messages.success(request, f'{item.lot_number}を{operation}しました')
         return redirect('wowma:search')
 
-
-class Upload(LoginRequiredMixin, TemplateView):
-    template_name = 'wowma_upload.html'
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = UploadedFileModelForm()
-        return context
-    def get(self, request, *args, **kwargs):
-        if not request.user.wowma_auth:
-            messages.error(request, '認証情報が登録されていません')
-            return redirect('wowma:dashboard')
-        context = self.get_context_data(**kwargs)
-        context['pagename'] = 'upload'
-        return super().render_to_response(context)
-    
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
-        form = UploadedFileModelForm(request.POST, request.FILES)
-        if not form.is_valid():
-            context['form'] = form
-            return self.render_to_response(context)
-        uploaded_file = form.save(commit = True)
-        items_to_register = uploaded_file.get_item_objects()
-        all_ok = True
-        for index, item in enumerate(items_to_register):
-            if not item.validate_for_add(index + 1):
-                error_record = UploadFileErrorRecord()
-                error_record.parent_file = uploaded_file
-                error_record.timing = TIMING_VALIDATION
-                error_record.line_number = index + 1
-                error_record.error_message = item.error
-                error_record.save()
-                all_ok = False
-       
-        if not all_ok:
-            messages.error(request, 'ファイルにエラーがありました')
-            context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
-            return self.render_to_response(context)
-        else:
-            # if all ok
-            wowma_api = WowmaApi(request.user.wowma_auth)
-            for index, item in enumerate(items_to_register):
-                if not wowma_api.register_item(item):
-                    error_record = UploadFileErrorRecord()
-                    error_record.parent_file = uploaded_file
-                    error_record.timing = TIMING_RUNTIME
-                    error_record.line_number = index + 1
-                    error_record.error_message = item.error
-                    error_record.save()
-                    all_ok = False
-            if not all_ok:
-                context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
-                messages.error(request, '登録時にエラーがありました')
-                return self.render_to_response(context)
-            else:
-                messages.success(request, '登録が完了しました')
-                return redirect('wowma:upload')
-            messages.success(request, '登録が完了しました')
-            return redirect('wowma:upload')
-
-            
+class Categories(LoginRequiredMixin, ListView):
+    model = Category
+    template_name = 'wowma_categories.html'

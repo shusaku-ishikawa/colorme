@@ -37,8 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'wowma',
     'thebase',
+    'colorme',
     'core',
-    'bootstrap4'
+    'bootstrap4',
+    'background_task'
 ]
 AUTH_USER_MODEL = 'core.User'
 LOGIN_URL = 'core:login'

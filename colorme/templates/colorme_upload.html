@@ -1,0 +1,134 @@
+{% extends 'colorme_base_template.html' %}
+{% load colormefilters %}
+{% load humanize %}
+{% block title %}
+  COLORME UPLOAD
+{% endblock %}
+
+{% block colorme_content_style %}
+  <style>
+    form.form.upload-form {
+      width: 450px;
+    }
+    th, td {
+      white-space: nowrap;
+    }
+  </style>
+{% endblock %}
+
+{% block colorme_content %}
+<form class="form upload-form" method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="upload">
+  <input type="hidden" name="user" value="{{ request.user }}">
+  {{ form.non_field_errors }}
+  <div class="form-group">
+    <label>{{ form.file_type.label }}:</label>
+    {{ form.file_type }}
+    {{ form.errors.file_type }}
+  </div>
+  <div class="form-group">
+    <label>{{ form.csv_file.label }}:</label>
+    {{ form.csv_file }}
+    {{ form.errors.csv_file }}
+  </div>
+  <button type="submit" class="btn btn-sm btn-primary my-1">アップロード</button>
+</form>
+{% if errors %}
+  <table class="table">
+    <caption>エラー</caption>
+    <thead>
+      <th>
+        行
+      </th>
+      <th>
+        タイミング
+      </th>
+      <th>
+        内容
+      </th>
+      
+    </thead>
+    <tbody>
+      {% for er in errors %}
+      <tr>
+        <td>
+          {{ er.line_number }}
+        </td>
+        <td>
+          {{ er.timing }}
+        </td>
+        <td>
+          {{ er.error_message }}
+        </td>
+      </tr>
+      {% endfor  %}
+    </tbody>
+  </table>
+{% else %}
+{% if uploaded_files %}
+<div class="table-responsive">
+  <table class="table" id="id_uploaded_files">
+    <caption>アップロードファイル一覧</caption>
+    <thead>
+      <th>
+        タイプ
+      </th>
+      <th>
+        アップロード時刻
+      </th>
+      <th>
+        処理時刻
+      </th>
+      <th>
+        FILE
+      </th>
+      <th>
+        エラー
+      </th>
+    </thead>
+    <tbody>
+      {% for object in uploaded_files %}
+      <tr>
+        <td>
+          {{ object.file_type | readable_filetype }}
+        </td>
+        <td>
+          {{ object.uploaded_at }}
+        </td>
+        <td>
+          <form method="post" action="{% url 'colorme:process' %}">
+          <input type="hidden" name="file_id" value="{{ object.id }}">
+          {% csrf_token %}
+          {% if object.processed_at %}
+            {{ object.processed_at }}
+            <button type="submit" class="btn btn-sm btn-outline-primary">再処理</button>
+          {% else %}
+            <button type="submit" class="btn btn-sm btn-outline-primary">取り込む</button>
+          {% endif %}
+        </form>
+        </td>
+        <td>
+          <a href="{{ object.csv_file.url }}" download>{{ object.csv_file.name }}</a>
+        </td>
+        <td>
+          
+          {% if object.errors.all %}
+          <ul class="list-group">
+            {% for er in object.errors.all %}
+            <li class="list-group-item">{{ er.line_number }}行目:{{ er.error_message }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}
+            --
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor  %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+

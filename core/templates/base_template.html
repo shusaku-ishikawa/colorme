@@ -10,16 +10,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+ 
   <title>{% block title %}{% endblock %}</title>
   <style>
-
-    .wrapper {
-        display: flex;
-        width: 100%;
-        align-items: stretch;
-        height: 95vh;
-        background-color: #f0f0da;
+    body{
+      font-family: "游ゴシック体", YuGothic, "游ゴシック Medium", "Yu Gothic Medium", "游ゴシック", "Yu Gothic", sans-serif;
     }
+    .wrapper {
+      display: flex;
+      width: 100%;
+      align-items: stretch;
+      height: 95vh;
+      background-color: #f0f0da;
+    }
+    th{
+      padding: 5px!important;
+      white-space: nowrap;
+      
+    }
+    li.list-group-item img {
+      width: 50px;
+      height: auto;
+    }
+    
+
   </style>
   {% block style %}{% endblock %}
 </head>

@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView, FormView
-from .thebase_api import thebase_api
+from django.views.generic import TemplateView, FormView, ListView
 from django.conf import settings
 from .models import *
+from .thebase_api import ThebaseApi
 from core.models import User
 from .enums import *
 from django.contrib import messages
@@ -16,7 +16,7 @@ class DashBoard(LoginRequiredMixin, TemplateView):
      
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        context['pagename'] = 'dashboard'
+        context['pagename'] = 'thebase_dashboard'
         context['form'] = OauthModelForm()
 
         return self.render_to_response(context)
@@ -50,7 +50,7 @@ class Authorize(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_dashboard.html'
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        context['pagename'] = 'authorize'
+        context['pagename'] = 'thebase_authorize'
         if 'code' in request.GET: # if authorized
             authorization_code = request.GET.get('code')
             request.user.thebase_auth.set_authorization_code(authorization_code)
@@ -87,14 +87,28 @@ class Authorize(LoginRequiredMixin, TemplateView):
                 redirect_url = request.user.thebase_auth.authorize()
                 return redirect(redirect_url)
 
-class Search(LoginRequiredMixin, TemplateView):
+class Categories(LoginRequiredMixin, ListView):
+    model = Category
+    template_name = 'thebase_categories.html'
+
+class Search(LoginRequiredMixin, ListView):
+    model = Item
     template_name = 'thebase_searchitems.html'
+    paginate_by = 20
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pagename'] = 'thebase_search'
+        context['q'] = kwargs['q']
+        return context
+
+    def get_queryset(self, **kwargs):
+        object_list = self.model.objects.filter(user = self.request.user)
+        if kwargs['q']:
+            object_list = object_list.filter(item_name__icontains = kwargs['q'])
+        return object_list
+
     def get(self, request, *args, **kwargs):
-        if not request.user.thebase_auth or not request.user.thebase_auth.access_token:
-            messages.error(request, 'アクセストークンが発行されていません')
-            return redirect('thebase:dashboard')
-        context = self.get_context_data(**kwargs)
-        context['pagename'] = 'search'
         if 'action' in request.GET and request.GET.get('action') == 'search': 
             if 'q' in request.session:
                 del request.session['q']
@@ -102,99 +116,66 @@ class Search(LoginRequiredMixin, TemplateView):
             request.session['q'] = q
         else:
             q = request.session['q'] if 'q' in request.session else None
-        context['q'] =  q        
-        context['search_result'] = thebase_api.search_items(request.user.thebase_auth, q)
-        print(context["search_result"])
+        
+        kwargs['q'] = q
+        self.object_list = self.get_queryset(**kwargs)
+        context = self.get_context_data(**kwargs)
+        
         return self.render_to_response(context)
+
 class Delete(LoginRequiredMixin, TemplateView):
     template_name = 'thebase_delete.html'
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         operation = request.GET.get('operation')
         selected_items = request.GET.getlist('selected_items[]')
-        context['items_to_delete'] = selected_items
+        items = []
+        for item_id in selected_items:
+            items.append(Item.objects.get(item_id = item_id))
+        context['items_to_delete'] = items
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
+        thebase_api = ThebaseApi(request.user.thebase_auth)
         items_to_delete = request.POST.getlist('items_to_delete[]')
         for item_id in items_to_delete:
-            item  = Item(item_id)
-            if not item.delete(request.user.thebase_auth):
-                messages.error(request, item.error)
-                print(item.error)
+            try:
+                thebase_api.delete(item_id)
+            except Exception as e:
+                messages.error(request, str(e))
             else: # if success
                 print('item successfully deleted')
-                messages.success(request, f'{item.item_id}を削除しました')
+                messages.success(request, f'{item_id}を削除しました')
         return redirect('thebase:search')
 
-class Upload(LoginRequiredMixin, TemplateView):
-    template_name = 'thebase_upload.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = UploadedFileModelForm()
-        return context
+class DeleteCategory(LoginRequiredMixin, TemplateView):
+    template_name = 'thebase_delete_categories.html'
 
     def get(self, request, *args, **kwargs):
-        if not request.user.thebase_auth or not request.user.thebase_auth.access_token:
-            messages.error(request, 'アクセストークンが発行されていません')
-            return redirect('thebase:dashboard')
         context = self.get_context_data(**kwargs)
-        context['pagename'] = 'upload'
-        return super().render_to_response(context)
-    
+        selected_categories = request.GET.getlist('selected_categories[]')
+        categories = []
+        for category_id in selected_categories:
+            categories.append(Category.objects.get(category_id = category_id))
+        context['categories_to_delete'] = categories
+        return self.render_to_response(context)
+
     def post(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
-        form = UploadedFileModelForm(request.POST, request.FILES)
-        if not form.is_valid():
-            context['form'] = form
-            return self.render_to_response(context)
-        uploaded_file = form.save(commit = True)
-        
-        items_to_register = uploaded_file.get_item_objects()
-        all_ok = True
-        
-        for index, item in enumerate(items_to_register):
-            if not item.validate_for_add(index + 1):
-                error_record = UploadFileErrorRecord()
-                error_record.parent_file = uploaded_file
-                error_record.timing = TIMING_VALIDATION
-                error_record.line_number = index + 1
-                error_record.error_message = item.error
-                error_record.save()
-                all_ok = False
-
-        if not all_ok:
-            messages.error(request, 'ファイルにエラーがありました')
-            context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
-            return self.render_to_response(context)
-        else:
-            for item in items_to_register:
-                if item.valid:
-                    if not item.item_id: # if new
-                        if not item.add(request.user.thebase_auth):
-                            error_record = UploadFileErrorRecord()
-                            error_record.parent_file = uploaded_file
-                            error_record.timing = TIMING_RUNTIME
-                            error_record.line_number = item.line_number
-                            error_record.error_message = item.error
-                            error_record.save()
-                            all_ok = False
-                    else: # if edit
-                        if not item.edit(request.user.thebase_auth):
-                            error_record = UploadFileErrorRecord()
-                            error_record.parent_file = uploaded_file
-                            error_record.timing = TIMING_RUNTIME
-                            error_record.line_number = item.line_number
-                            error_record.error_message = item.error
-                            error_record.save()
-                            all_ok = False
-            if not all_ok:
-                messages.error(request, '登録時にエラーがありました')
-                context['errors'] = UploadFileErrorRecord.objects.filter(parent_file = uploaded_file)
-                return self.render_to_response(context)
-            else:
-                messages.success(request, '登録が完了しました')
-                return redirect('thebase:upload')
-
-            
+        thebase_api = ThebaseApi(request.user.thebase_auth)
+        categories_to_delete = request.POST.getlist('categories_to_delete[]')
+        for category_id in categories_to_delete:
+            try:
+                r = thebase_api.delete_category(category_id)
+                if not thebase_api.validate_response(r):
+                    if thebase_api.error == '不正なcategory_idです。':
+                        pass
+                    else:
+                        raise Exception(f'カテゴリ削除中にエラー {thebase_api.error}')
+            except Exception as e:
+                messages.error(request, str(e))
+            else: # if success
+                print('category successfully deleted')
+                Category.objects.get(category_id = category_id).delete()
+                messages.success(request, f'{category_id}を削除しました')
+        return redirect('thebase:categories')
+       

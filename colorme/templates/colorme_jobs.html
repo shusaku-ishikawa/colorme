@@ -1,0 +1,87 @@
+{% extends 'colorme_base_template.html' %}
+{% load colormefilters %}
+
+{% load humanize %}
+{% block title %}
+  BASE Dashboard
+{% endblock %}
+
+{% block colorme_content_style %}
+  <style>
+  </style>
+{% endblock %}
+
+{% block colorme_content %}
+<form class="form-inline" method="post">
+  {% csrf_token %}
+  <div class="form-group my-2">
+    <label for="id_jobs"">JOB</label>
+    <select name="job_name" id="id_jobs" class="form-control">
+      <option value="import_csv">import_csv</option>
+      <option value="sync_thebase_with_colorme">カラーミー商品をBASEへ登録</option>
+      <option value="delete_all_colorme_items">カラーミー商品全削除</option>
+      <option value="delete_all_thebase_items">BASE商品全削除</option>
+      <option value="sync_thebase_categories">BASEカテゴリ同期</option>
+      <option value="sync_thebase_items">BASE商品同期</option>
+    </select>
+    <button type="submit" class="btn btn-warning">実行</button>
+  </div>
+</form>
+{% if job_list %}
+<table class="table">
+  <caption>JOB一覧(最新の5つのみ表示)</caption>
+  <thead>
+    <th>
+      JOB
+    </th>
+    <th>
+      登録日
+    </th>
+    <th>
+      ステータス
+    </th>
+    <th>
+      完了日
+    </th>
+    <th>
+      ログ
+    </th>
+  </thead>
+  <tbody>
+    {% for job in job_list %}
+    <tr>
+      <td>
+        {{ job.job_name }}
+      </td>
+      <td>
+        {{ job.registered_at }}
+      </td>
+      <td>
+        {{ job.status_readable }}
+      </td>
+      <td>
+        {{ job.completed_at |default_if_none:'-' }}
+      </td>
+      <td>
+        {% if job.log %}
+        {{ job.log|extract }}
+        {% include 'colorme_jobs_log_modal.html' with log=job.log %}
+        <button class="btn btn-sm btn-outline-info modal-open">全て表示</button>
+        {% else %}
+        --
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
+
+{% block colorme_script %}
+<script>
+
+</script>
+{% endblock %}
+
+

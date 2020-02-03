@@ -1,0 +1,31 @@
+{% extends 'thebase_base_template.html' %}
+{% load thebasefilters %}
+{% load humanize %}
+{% block title %}
+  BASE Category Delete
+{% endblock %}
+
+{% block thebase_content_style %}
+  <style>
+
+  </style>
+{% endblock %}
+
+
+{% block thebase_content %}
+本当に削除しますか?
+<form class="form" method="post">
+  {% csrf_token %}
+  <ul class="list-group">
+  {% for category in categories_to_delete %}
+    <li class="list-group-item">
+      <span class="ml-2">{{ category.name }}</span>
+    </li>
+    <input type="hidden" name="categories_to_delete[]" value="{{ category.category_id }}">
+  {% endfor %}
+  </ul>
+  <button type="submit" class="btn btn-warning mt-2">削除</button>
+</form>
+{% endblock %}
+
+

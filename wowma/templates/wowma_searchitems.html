@@ -37,7 +37,7 @@
        <input type="text" name="itemname" class="form-control" id="id-itemname" value="{{ searchparams.itemname }}">
      </div>
     </div>
-      <button type="submit" class="btn btn-success">検索</button>
+      <button type="submit" class="btn btn-primary">検索</button>
   </form>
   {% if search_result.error %}
   {{ search_result.error.code }} {{ search_result.error.message }}
@@ -115,7 +115,7 @@
               <td>
                 <img class="item-thumbnail" src="{{ object.images.0.image_url }}">
                 {% include 'wowma_searchitems_images_modal.html' with images=object.images %}
-                  <button class="image-modal-open btn btn-success">全て表示</button>
+                  <button class="image-modal-open btn btn-primary">全て表示</button>
               </td>
               <td>
                 {{ object.item_name |left:10 }}
@@ -137,7 +137,7 @@
               </td>
               <td>
                 {% include 'wowma_searchitems_detail_modal.html' with object=object %}
-                <button class="btn btn-success modal-open">表示</button>
+                <button class="btn btn-primary modal-open">表示</button>
               </td>
               <td>
                 {% for register_stock in object.register_stocks %}

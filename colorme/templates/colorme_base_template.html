@@ -1,0 +1,42 @@
+{% extends 'base_template.html' %}
+
+
+{% block style %}
+  <style>
+    a.btn.btn-primary {
+      color: white;
+    }
+    .sidebar {
+      width: 15vw;
+    }
+    div.content {
+      padding: 1rem;;
+      width: 85vw;
+      overflow: auto;
+      background-color: #f0f0da;
+    }
+  </style>
+  {% block colorme_content_style %}
+  {% endblock %}
+{% endblock %}
+
+{% block content %}
+  <div class="sidebar">
+    {% include 'sidebar.html' %}
+  </div>
+  <div class="content">
+    {% if messages %}
+    {% for message in messages %}
+      <div class="{{ message|bootstrap_message_classes }} alert-dismissable">
+          <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&#215;</button>
+          {{ message }}
+      </div>
+    {% endfor %}
+    {% endif %}
+    {% block colorme_content %}
+    {% endblock %}
+  </div>
+{% endblock %}
+{% block script %}
+{% block colorme_script %}{% endblock %}
+{% endblock %}

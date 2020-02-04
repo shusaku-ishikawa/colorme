@@ -153,16 +153,21 @@ class Item(models.Model):
 
         return params
     
-    def validate_for_add(self, line_number):
-        self.line_number = line_number
-        for f in __class__.required_fields:
-            if not getattr(self, f) or getattr(self, f) == '':
-                self.valid = False
-                self.error = f'{f}は必須項目です'
-                return False
-        self.valid = True
-        return True
-
+    def set_attributes(self, item_dict):
+        variations = []
+        for key, value in item_dict.items():
+            if key == 'variations':
+                for index, var in enumerate(item_dict['variations']):
+                    variation  = Variation()
+                    for key, value in var.items():
+                        setattr(variation, key, value)
+                    variations.append(variation)
+            elif key in dir(self):
+                setattr(self, key, value)
+        self.save()
+        for var in variations:
+            var.item = self
+            var.save()
 class Variation(models.Model):
     item = models.ForeignKey(to = Item,on_delete = models.CASCADE,related_name = 'variations')
     variation_id = models.IntegerField(null = True, blank = True)

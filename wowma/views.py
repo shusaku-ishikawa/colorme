@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from .wowma_api import WowmaApi
 from django.conf import settings
 from .enums import *
@@ -46,16 +46,26 @@ class DashBoard(LoginRequiredMixin, TemplateView):
             return redirect('wowma:dashboard')
         else:
            pass
-class Search(TemplateView):
+class Search(LoginRequiredMixin, ListView):
     template_name = 'wowma_searchitems.html'
+    model = Item
+
+    def get_queryset(self, **kwargs):
+        object_list = self.model.objects.filter(user = self.request.user)
+        return object_list
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['pagename'] = 'wowma_search'
         return context
 
     def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset(**kwargs)
         context = self.get_context_data(**kwargs)
         limit = ITEMS_PER_PAGE
+        wowma_api = WowmaApi(request.user.wowma_auth)
+        res = wowma_api.search_item_info(10, 1)
+        print(res)
         if 'action' in request.GET and request.GET.get('action') == 'search':
             # if new search request
             if 'searchparams' in request.session:

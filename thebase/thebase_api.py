@@ -105,6 +105,8 @@ class ThebaseApi:
         return requests.post(url, {'item_category_id':item_category_id}, headers = self.api_header).json()
     
     def validate_response(self, response_json):
+        self.valid = True
+        self.error = None
         if 'error' in response_json:
             self.valid = False
             self.error = response_json['error_description']
@@ -186,31 +188,19 @@ class ThebaseApi:
         url = f'{THEBASE_ENDPOINT}1/items/add'
         response_json = requests.post(url, data=item_params, headers = self.api_header).json()
         if not self.validate_response(response_json):
-            item = Item()
             raise Exception(self.error)
-        else:
-            item_json = response_json['item']
-            item = Item()
-            item.user = self.oauth.user
-            variations = []
-            for key, value in item_json.items():
-                if key == 'variations':
-                    for index, var in enumerate(item_json['variations']):
-                        variation  = Variation()
-                        for key, value in var.items():
-                            setattr(variation, key, value)
-                        variations.append(variation)
-                elif key in dir(item):
-                    setattr(item, key, value)
 
-            # categories
-            self.set_category_to_item(item, categories)
-            # images
-            self.set_images_to_item(item, images)
-            item.save()
-            for variation in variations:
-                variation.item = item
-                variation.save()
+        item_json = response_json['item']
+        item = Item()
+        item.user = self.oauth.user
+        variations = []
+       
+        item.set_attributes(item_json)
+        # categories
+        self.set_category_to_item(item, categories)
+        # images
+        self.set_images_to_item(item, images)
+
         return True
 
     def edit(self, item_params, categories, images ):

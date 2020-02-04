@@ -13,7 +13,23 @@ class AuthInfo(models.Model):
     store_id = models.CharField(
         max_length = 10,
     )
+class Category(models.Model):
+    user = models.ForeignKey(to = 'core.User', on_delete = models.CASCADE, related_name = 'wowma_categories')
+    shopCategoryId = models.IntegerField(unique = True)
+    shopCategoryLevel = models.CharField(max_length = 1)
+    shopCategoryName = models.CharField(max_length = 255)
+    
+    def set_attributes(self, category_element):
+        for f in vars(self):
+            if f == 'user':
+                continue
+            setattr(self, f, category_element.find(f).text)
+        self.save()
+
 class Item(models.Model):
+    
+    user = models.ForeignKey(to = 'core.User', on_delete = models.CASCADE, related_name = 'wowma_items')
+    lotNumber = models.IntegerField(unique = True)
     itemName = models.CharField(max_length = 128)
     itemManagementId = models.CharField(max_length = 128, null = True, blank = True)
     itemManagementName = models.CharField(max_length = 128, null = True, blank = True)
@@ -26,6 +42,24 @@ class Item(models.Model):
     categoryId = models.CharField(max_length = 20, null = True, blank = True)
     saleStatus = models.CharField(max_length = 1, default = '1')
     
+    def set_attributes(self, item_element):
+        for f in vars(self):
+            if f == 'user':
+                continue
+            setattr(self, f, item_element.find(f).text)
+        self.save()
+
+        for image_element in item_element.findall('images'):
+            image = Image(item = self)
+            image.set_attributes(image_element)
+        
+        register_stock = RegisterStock(item = self)
+        if item_element.find('registerStock'):
+            register_stock.set_attributes(item_element.find('registerStock'))
+
+        self.save()
+        return True
+
     def serialize(self, mode = API_MODE_REGISTER):
         root = ET.Element(f'{mode}Item')
         for f in vars(self):
@@ -41,6 +75,14 @@ class Image(models.Model):
     imageUrl = models.URLField(max_length = 255)
     imageName = models.CharField(max_length = 16)
     imageSeq = models.CharField(max_length = 2)
+    def set_attributes(self, image_element):
+        for f in vars(self):
+            if f == 'item':
+                continue
+            setattr(self, f, item_element.find(f).text)
+        self.save()
+        return True
+
     def serialize(self):
         root = ET.Element('images')
         for f in vars(self):
@@ -51,10 +93,31 @@ class Image(models.Model):
 class RegisterStock(models.Model):
     item = models.OneToOneField(to = Item, on_delete = models.CASCADE)
     stockSegment = models.CharField(max_length = 1)
-    stockCount = models.CharField(max_legnth = 5, null = True, blank = True)
+    stockCount = models.CharField(max_length = 5, null = True, blank = True)
     choicesStockHorizontalItemName = models.CharField(max_length = 50)
-    choicesStockVerticalItemName = models.CharField(max_legnth = 50)
+    choicesStockVerticalItemName = models.CharField(max_length = 50)
     
+    def set_attributes(self, register_stock_element):
+        for f in vars(self):
+            if f == 'item':
+                continue
+            setattr(self, f, item_element.find(f).text)
+        self.save()
+
+        for horizontal_element in register_stock_element.findall('choicesStockHorizontals'):
+            horizontal = ChoicesStockHorizontal(registerStock = self)
+            horizontal.set_attributes(horizontal_element)
+        
+        for vertical_element in register_stock_element.findall('choicesStockVerticals'):
+            vertical = ChoicesStockVertical(registerStock = self)
+            vertical.set_attributes(vertical_element)
+        
+        for choices_stock_element in register_stock_element.findall('choicesStocks'):
+            choices_stock = ChoicesStock(registerStock = self)
+            choices_stock.set_attributes(choices_stock_element)
+
+        return True
+        
     def serialize(self, mode = API_MODE_REGISTER):
         root = ET.Element(f'{mode}Stock')
         
@@ -68,6 +131,8 @@ class RegisterStock(models.Model):
         for ver in self.verticals.all():
             root.append(ver.serialize())
 
+        for choicesStock in self.chiocesStocks.all():
+            root.append(chiocesStocks.serialize())
 
         return root
 
@@ -77,6 +142,15 @@ class ChoicesStockoHorizontal(models.Model):
     choicesStockHorizontalName = models.CharField(max_length = 100)
     choicesStockHorizontalSeq = models.CharField(max_length = 2)
     
+    def set_attributes(self, horizontal_element):
+        for f in vars(self):
+            if f == 'registerStock':
+                continue
+            elem = ET.SubElement(root, f)
+            elem.text = getattr(slef, f)
+        self.save()
+        return True
+
     def serialize(self):
         root = ET.Element('chiocesStockHorizontals')
         for f in vars(self):
@@ -91,6 +165,15 @@ class ChoicesStockoVertical(models.Model):
     choicesStockVerticalCode = models.CharField(max_length = 255)
     choicesStockVerticalName = models.CharField(max_length = 100)
     choicesStockVerticalSeq = models.CharField(max_length = 2)
+    def set_attributes(self, vertical_element):
+        for f in vars(self):
+            if f == 'registerStock':
+                continue
+            elem = ET.SubElement(root, f)
+            elem.text = getattr(slef, f)
+        self.save()
+        return True
+        
     def serialize(self):
         root = ET.Element('choicesStockVerticals')
         for f in vars(self):
@@ -101,13 +184,25 @@ class ChoicesStockoVertical(models.Model):
         return root
         
 class ChoicesStock(models.Model):
-    registerStock = models.ForeignKey(to = RegisterStock, on_delete = models.CASCADE)
+    registerStock = models.ForeignKey(to = RegisterStock, on_delete = models.CASCADE, related_name = 'choicesStocks')
     choicesStockVerticalCode = models.CharField(max_length = 255)
     choicesStockoHorizontalCode = models.CharField(max_length = 255)
     choicesStockCount = models.CharField(max_length = 5)
+    
+    def set_attributes(self, vertical_element):
+        for f in vars(self):
+            if f == 'registerStock':
+                continue
+            elem = ET.SubElement(root, f)
+            elem.text = getattr(slef, f)
+        self.save()
+        return True
+        
     def serialize(self):
         root = ET.Element('choicesStocks')
         for f in vars(self):
+            if f == 'registerStock':
+                continue
             elem = ET.SubElement(root, f)
             elem.text = getattr(self, f)
         return root

@@ -1,7 +1,11 @@
 from django.db import models
 
 from .enums import *
+from wowma.enums import *
+from wowma.models import Category
 from thebase.models import Item as base_Item
+import xml.etree.ElementTree as ET
+
 class Item(models.Model):
     user = models.ForeignKey(
         to = 'core.User',
@@ -327,7 +331,7 @@ class Item(models.Model):
         images.extend(self.extra_images)
         return images
     @property
-    def base_categories(self):
+    def categories(self):
         return {
             'category_1': self.category_1,
             'category_2': self.category_2
@@ -364,6 +368,48 @@ class Item(models.Model):
             params[f'variation_stock[{index}]'] = var.stock_count
         return params
     
+    def xml_serialize_item(self, mode = API_MODE_REGISTER):
+        register_item = ET.Element(f'{mode}Item')
+        item_name = ET.SubElement(register_item, 'itemName')
+        item_name.text = f"送料無料 {self.item_name}"
+        item_management_id = ET.SubElement(register_item, 'itemManagementId')
+        item_management_id.text = self.kataban
+        item_management_name = ET.SubElement(register_item, 'itemManagementName')
+        item_management_name.text = self.kataban
+        item_code = ET.SubElement(register_item, 'itemCode')
+        item_code.text = self.kataban
+        item_price = ET.SubElement(register_item, 'itemPrice')
+        item_price.text = self.sell_price - 300
+        sell_method_segment = ET.SubElement(register_item, 'sellMethodSegment')
+        sell_method_segment.text = '1' # 通常
+        tax_segment = ET.SubElement(register_item, 'taxSegment')
+        tax_segment.text = '1'
+        postage_segment = ET.SubElement(register_item, 'postageSegment')
+        postage_segment.text = '2' # 送料込み
+        description = ET.SubElement(register_item, 'description')
+        description.text = self.custom_description
+        for index, image_url in enumerate(self.images):
+            image_root = ET.Element('images')
+            image_url = ET.SubElement(image_root, 'imageUrl')
+            image_url.text = image_url
+            image_name = ET.SubElement(image_root, 'imageName')
+            image_name.text = f'{self.kataban}_image{index + 1}'
+            image_seq = ET.SubElement(image_root, 'imageSeq')
+            image_seq.text = index + 1
+            register_item.append(image_root)
+
+        category_id = ET.SubElement(register_item, 'categoryId')
+        
+        return register_item
+    def xml_serialize_stock(self, mode = API_MODE_REGISTER):
+        register_stock = ET.Element(f'{mode}Stock')
+
+    @property
+    def wowma_add_api_params(self):
+        request = ET.Element('request')
+        register_item = self.xml_serialize_item(mode = API_MODE_REGISTER)
+        register_stock = self.xml_serialize_stock(mode = API_MODE_REGISTER)
+
     def base_edit_api_params(self, base_item):
         params = self.base_add_api_params
         params['item_id'] = base_item.item_id
@@ -374,7 +420,7 @@ class Item(models.Model):
             elif len(exists) == 1: # if already exist then set variation_id
                 params[f'variation_id[{index}]'] = exists[0]
         return params
-        
+    
 
 
 class Option(models.Model):

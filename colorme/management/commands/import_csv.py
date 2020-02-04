@@ -5,12 +5,14 @@ import csv
 from colorme.enums import *
 from django.utils import timezone
 from core.models import User
+from core.base_command import MyBaseCommand
 
-class Command(BaseCommand):
+class Command(MyBaseCommand):
     help = 'Import uploaded csv'
+    task_name = 'CSV取り込み処理'
 
     def add_arguments(self, parser):
-        parser.add_argument('username', nargs='+', type=str)
+        super().add_arguments(parser)
         parser.add_argument('-f', '--file', type=int)
 
     def save_product(self, row, username):
@@ -68,7 +70,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f'{option_instance.option_id}をデータベースに登録しました。')
     
-    def handle(self, *args, **options):
+    def run(self, user, **options):
         if 'file' in options:
             file_id = options['file']
             target_files = UploadFile.objects.filter(id = file_id)
@@ -109,4 +111,3 @@ class Command(BaseCommand):
 
             uploaded_object.processed_at = timezone.now()
             uploaded_object.save()
-        self.stdout.write('処理が完了しました。')

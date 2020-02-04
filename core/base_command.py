@@ -21,5 +21,11 @@ class MyBaseCommand(BaseCommand):
             self.custom_log(f'[{options["username"]}]存在しないユーザです')
             return False
         self.custom_log(f'{self.task_name}を開始します。')
-        self.run(user, **options)
-        self.custom_log(f'{self.task_name}が終了しました。')
+        try:
+            self.run(user, **options)
+        except Exception as e:
+            self.custom_log(f'処理が異常終了しました。{str(e)}')
+            return False
+        else:
+            self.custom_log(f'{self.task_name}が終了しました。')
+            return True

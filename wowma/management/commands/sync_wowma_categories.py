@@ -21,8 +21,7 @@ class Command(MyBaseCommand):
         try:
             all_categories = wowma_api.fetch_all_categoeis()
         except:
-            self.custom_log(f'処理が異常終了しました。 {wowma_api.error}')
-            return False
+            raise Exception(f'次の理由で取得できませんでした。 {wowma_api.error}')
         else:
             for item_element in all_items:
                 category_name = item_element.find("shopCategoryName").text

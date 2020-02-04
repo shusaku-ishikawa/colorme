@@ -20,8 +20,7 @@ class Command(MyBaseCommand):
         try:
             all_items = wowma_api.fetch_all()
         except:
-            self.custom_log(f'処理が異常終了しました。 {wowma_api.error}')
-            return False
+            raise Exception(f'次の理由で取得できませんでした。 {wowma_api.error}')
         else:
             for item_element in all_items:
                 item_name = item_element.find("itemName").text

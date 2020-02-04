@@ -81,6 +81,8 @@ class Oauth(models.Model):
             self.refresh_token = response_json['refresh_token']
             self.save()
     def refresh_if_necessary(self):
+        if not self.refresh_token:
+            raise Exception('BASEの認証情報が登録されていません')
         if not self.access_token_valid:
             self.get_access_token(GRANT_TYPE_REFRESH_TOKEN)
 

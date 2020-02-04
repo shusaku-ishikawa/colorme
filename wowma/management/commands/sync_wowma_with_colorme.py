@@ -5,9 +5,9 @@ from colorme.enums import *
 from django.utils import timezone
 from core.models import User
 from wowma.wowma_api import WowmaApi
-from core.base_command import MyBaseCommnd
+from core.base_command import MyBaseCommand
 
-class Command(MyBaseCommnd):
+class Command(MyBaseCommand):
     help = 'Sync with colorme'
     task_name = 'カラーミー->Wowma商品同期'
 
@@ -22,15 +22,20 @@ class Command(MyBaseCommnd):
             except wowma_Item.DoesNotExist:
                 # if new
                 try:
-                    item = thebase_api.add(colorme_item.wowma_add_api_params, colorme_item.categories, colorme_item.images)
+                    item = thebase_api.add(colorme_item.wowma_add_api_params)
                 except Exception as e:
-                    self.custom_log(f'BASE新規登録中にエラーが発生しました。{str(e)}')
+                    self.custom_log(f'次の理由で登録されませんでした。{str(e)}')
                 else:
                     self.custom_log(f'正常に登録されました。')
+                    item = Item(user = self.auth_info.user)
+                    item.set_attributes(colorme_item.xml_serialize_item())
+                    register_stock = RegisterStock(item = item)
+                    register_stock.set_attributes(colorme_item.xml_serialize_stock)
+                    
             else: # if update
                 try:
                     item = thebase_api.edit(colorme_item.wowma_edit_api_params(base_item), colorme_item.categories, colorme_item.images)
                 except Exception as e:
-                    self.custom_log(f'BASE更新中にエラーが発生しました。{str(e)}')
+                    self.custom_log(f'次の理由で更新されませんでした。{str(e)}')
                 else:
                     self.custom_log(f'正常に更新されました。')

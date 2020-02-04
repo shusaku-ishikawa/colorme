@@ -5,6 +5,7 @@ from wowma.enums import *
 from wowma.models import Category
 from thebase.models import Item as base_Item
 import xml.etree.ElementTree as ET
+from wowma.wowma_api import WowmaApi
 
 class Item(models.Model):
     user = models.ForeignKey(
@@ -330,6 +331,7 @@ class Item(models.Model):
         images = [self.image_url]
         images.extend(self.extra_images)
         return images
+
     @property
     def categories(self):
         return {
@@ -368,6 +370,14 @@ class Item(models.Model):
             params[f'variation_stock[{index}]'] = var.stock_count
         return params
     
+    @property
+    def wowma_shopcategories(self):
+        if self.category_1 and not self.category_2:
+            return self.category_1
+        elif self.category_2:
+            return f'{self.category_1}:{self.category_2}'
+        return None
+
     def xml_serialize_item(self, mode = API_MODE_REGISTER):
         register_item = ET.Element(f'{mode}Item')
         item_name = ET.SubElement(register_item, 'itemName')
@@ -398,7 +408,11 @@ class Item(models.Model):
             image_seq.text = index + 1
             register_item.append(image_root)
 
-        category_id = ET.SubElement(register_item, 'categoryId')
+        #category_id = ET.SubElement(register_item, 'categoryId')
+        if self.wowma_shopcategories:
+            shop_category = ET.SubElement(register_item, 'shopCategory')
+            shop_category_name = ET.SubElement(shop_category, 'shopCategoryName')
+            shop_category_name.text = self.wowma_shopcategories
         
         return register_item
     def xml_serialize_stock(self, mode = API_MODE_REGISTER):

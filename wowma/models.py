@@ -18,7 +18,10 @@ class Category(models.Model):
     shopCategoryId = models.IntegerField(unique = True)
     shopCategoryLevel = models.CharField(max_length = 1)
     shopCategoryName = models.CharField(max_length = 255)
-    
+    @property
+    def category_list(self):
+        return self.shopCategoryName.split(':')
+        
     def set_attributes(self, category_element):
         for f in vars(self):
             if f == 'user':

@@ -8,6 +8,8 @@ import os
 class ThebaseApi:
         
     def __init__(self, oauth):
+        if not oauth:
+            raise Exception('BASE認証情報が登録されていません')
         self.oauth = oauth
     @property
     def api_header(self):

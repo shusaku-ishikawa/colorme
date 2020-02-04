@@ -32,9 +32,9 @@ class Command(MyBaseCommand):
             item_instance.stock_count = 0
         item_instance.save()
         if is_update:
-            self.stdout.write(self.style.SUCCESS(f'{item_instance.item_name}の情報を更新しました。'))
+            self.custom_log(self.style.SUCCESS(f'{item_instance.item_name}の情報を更新しました。'))
         else:
-            self.stdout.write(self.style.SUCCESS(f'{item_instance.item_name}をデータベースに登録しました。'))
+            self.custom_log(self.style.SUCCESS(f'{item_instance.item_name}をデータベースに登録しました。'))
     
     def save_option(self, row):
         try:
@@ -66,9 +66,9 @@ class Command(MyBaseCommand):
         
         option_instance.save()
         if is_update:
-            self.stdout.write(f'{option_instance.option_id}の情報を更新しました。')
+            self.custom_log(f'{option_instance.option_id}の情報を更新しました。')
         else:
-            self.stdout.write(f'{option_instance.option_id}をデータベースに登録しました。')
+            self.custom_log(f'{option_instance.option_id}をデータベースに登録しました。')
     
     def run(self, user, **options):
         if 'file' in options:
@@ -78,10 +78,10 @@ class Command(MyBaseCommand):
             target_files = UploadFile.objects.filter(processed_at = None, user__username = options['username'][0]).order_by('-pk')
         
         if len(target_files) == 0:
-            self.stdout.write('対象ファイルがありませんでした。')
+            self.custom_log('対象ファイルがありませんでした。')
             return
         for uploaded_object in target_files:
-            self.stdout.write(f'{uploaded_object.csv_file.name}を処理します。')
+            self.custom_log(f'{uploaded_object.csv_file.name}を処理します。')
         
             csv_data = csv.reader(TextIOWrapper(uploaded_object.csv_file.file, encoding='cp932'))
             for index, row in enumerate(csv_data):
@@ -92,7 +92,7 @@ class Command(MyBaseCommand):
                     try:
                         self.save_product(row, options['username'][0])
                     except Exception as e:
-                        self.stdout.write(f'エラーが発生しました。 {str(e)}')
+                        self.custom_log(f'エラーが発生しました。 {str(e)}')
                         error_record = UploadFileErrorRecord()
                         error_record.parent_file = uploaded_object
                         error_record.line_number = index + 1
@@ -102,7 +102,7 @@ class Command(MyBaseCommand):
                     try:
                         self.save_option(row)
                     except Exception as e:
-                        self.stdout.write(f'エラーが発生しました。 {str(e)}')
+                        self.custom_log(f'エラーが発生しました。 {str(e)}')
                         error_record = UploadFileErrorRecord()
                         error_record.parent_file = uploaded_object
                         error_record.line_number = index + 1

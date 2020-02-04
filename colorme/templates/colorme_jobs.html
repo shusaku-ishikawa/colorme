@@ -15,9 +15,9 @@
 <form class="form-inline" method="post">
   {% csrf_token %}
   <div class="form-group my-2">
-    <label for="id_jobs"">JOB</label>
-    <select name="job_name" id="id_jobs" class="form-control">
-      <option value="import_csv">import_csv</option>
+    <label for="id_jobs"">ジョブ</label>
+    <select name="job_name" id="id_jobs" class="form-control mx-2">
+      <option value="import_csv">CSV登録</option>
       <option value="sync_thebase_with_colorme">カラーミー商品をBASEへ登録</option>
       <option value="delete_all_colorme_items">カラーミー商品全削除</option>
       <option value="delete_all_thebase_items">BASE商品全削除</option>

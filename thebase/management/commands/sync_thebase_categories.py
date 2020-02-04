@@ -16,8 +16,8 @@ class Command(MyBaseCommand):
         categories = thebase_api.get_categories()
         
         if categories == False:
-            self.custom_log(f'処理が異常終了しました。{thebase_api.error}')
-            return
+            raise Exception(f'処理が異常終了しました。{thebase_api.error}')
+            
         categories = categories['categories']
         # delete current database
         self.custom_log('テーブル Category のデータを削除します。')

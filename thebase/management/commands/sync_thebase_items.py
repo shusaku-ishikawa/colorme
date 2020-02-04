@@ -23,8 +23,8 @@ class Command(MyBaseCommand):
 
         all_items = thebase_api.fetch_all()
         if all_items == False:
-            self.custom_log(f'処理が異常終了しました。 {thebase_api.error}')
-            return False
+            raise Exception(f'処理が異常終了しました。 {thebase_api.error}')
+            
         for item_dict in all_items:
             self.custom_log(f'商品:{item_dict["title"]}をデータベースに登録します。')
             item = Item(user = user)
@@ -46,8 +46,7 @@ class Command(MyBaseCommand):
 
             item_categories = thebase_api.get_item_categories(item)
             if item_categories == False:
-                self.custom_log(f'異常終了しました。{thebase_api.error}')
-                return
+                raise Exception(f'異常終了しました。{thebase_api.error}')
             item_categories = item_categories['item_categories']
             for item_category in item_categories:
                 self.custom_log(f'商品カテゴリ {item_category["item_category_id"]}をデータベースに登録します')

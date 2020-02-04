@@ -90,6 +90,12 @@ class Authorize(LoginRequiredMixin, TemplateView):
 class Categories(LoginRequiredMixin, ListView):
     model = Category
     template_name = 'thebase_categories.html'
+    def get_queryset(self, **kwargs):
+        return self.model.objects.filter(user = self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pagename'] = 'thebase_categories'
 
 class Search(LoginRequiredMixin, ListView):
     model = Item
@@ -98,6 +104,7 @@ class Search(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         context['pagename'] = 'thebase_search'
         context['q'] = kwargs['q']
         return context

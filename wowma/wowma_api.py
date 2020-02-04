@@ -1,7 +1,7 @@
 import requests
 from urllib.parse import urlencode
 import xml.etree.ElementTree as ET
-
+from wowma.models import *
 from .enums import *
 import os
 
@@ -11,6 +11,8 @@ class WowmaApi:
         'https': 'http://user:332191-Aa@stoneriver.info:8081'
     }
     def __init__(self, auth_info):
+        if not auth_info:
+            raise Exception('Wowma認証情報が登録されていません')
         self.auth_info = auth_info
         self.valid = True
         self.error = None
@@ -75,20 +77,16 @@ class WowmaApi:
         max_count = response_parsed.find('./searchResult/maxCount').text
         return response_parsed.findall('./searchResult/resultItems')
     
-    def add(self, request_element, categories, images):
+    def add(self, request_element):
+
         url = f'{WOWMA_ENDPOINT}registerItemInfo/'
+
         response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=ET.tostring(request_element, encoding='utf-8'))
         response_parsed = ET.fromstring(response.content)
         if not self.validate_response(response_parsed):
             raise Exception(self.error)
-        item_element = request_element.find('./registerItem')
-        item = Item(user = self.auth_info.user)
-        item.set_attributes(item_element)
+        return True
 
-        register_stock_element = request_element.find('./registerStock')
-        register_stock = RegisterStock(item = item)
-        register_stock.set_attributes(register_stock_element)
-    
 
     def update_item(self, item):
         url = f'{WOWMA_ENDPOINT}updateItemInfo/'

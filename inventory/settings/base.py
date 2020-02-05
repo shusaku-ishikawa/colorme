@@ -114,7 +114,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-STATIC_URL = '/static_inventory/'
+STATIC_URL = '/static_myinv/'
 STATIC_ROOT = os.path.join(BASE_DIR,'static') # 追加
 STATICFILES_DIRS = [
     #os.path.join(BASE_DIR, 'wowma/static'),
@@ -123,5 +123,5 @@ STATICFILES_DIRS = [
 ]
 
 MEDIA_ROOT = os.path.join(BASE_DIR,'media') # 追加
-MEDIA_URL = '/media_inventory/' # 追加
+MEDIA_URL = '/media_myinv/' # 追加
 

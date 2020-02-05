@@ -5,7 +5,7 @@ ALLOWED_HOSTS = ["stoneriver.info"]
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'inventory',
+        'NAME': 'colormedb',
         'USER': 'root',
         'PASSWORD': '332191-Aa',
         'HOST': '127.0.0.1',

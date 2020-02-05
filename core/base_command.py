@@ -10,7 +10,7 @@ class MyBaseCommand(BaseCommand):
     task_name = 'task name'
     def add_arguments(self, parser):
         parser.add_argument('username', nargs='+', type=str)
-    
+        
     def custom_log(self, content):
         self.stdout.write(f'{timezone.now().strftime("%Y/%m/%d %H:%M:%S")} {content}', ending='<br>')
     
@@ -25,7 +25,5 @@ class MyBaseCommand(BaseCommand):
             self.run(user, **options)
         except Exception as e:
             self.custom_log(f'処理が異常終了しました。{str(e)}')
-            return False
         else:
             self.custom_log(f'{self.task_name}が終了しました。')
-            return True

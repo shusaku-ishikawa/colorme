@@ -10,7 +10,6 @@ from core.base_command import MyBaseCommand
 class Command(MyBaseCommand):
     help = 'Import uploaded csv'
     task_name = 'CSV取り込み処理'
-
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument('-f', '--file', type=int)
@@ -32,9 +31,9 @@ class Command(MyBaseCommand):
             item_instance.stock_count = 0
         item_instance.save()
         if is_update:
-            self.custom_log(self.style.SUCCESS(f'{item_instance.item_name}の情報を更新しました。'))
+            self.custom_log(f'{item_instance.item_name}の情報を更新しました。')
         else:
-            self.custom_log(self.style.SUCCESS(f'{item_instance.item_name}をデータベースに登録しました。'))
+            self.custom_log(f'{item_instance.item_name}をデータベースに登録しました。')
     
     def save_option(self, row):
         try:
@@ -71,6 +70,7 @@ class Command(MyBaseCommand):
             self.custom_log(f'{option_instance.option_id}をデータベースに登録しました。')
     
     def run(self, user, **options):
+        return True
         if 'file' in options:
             file_id = options['file']
             target_files = UploadFile.objects.filter(id = file_id)
@@ -79,7 +79,7 @@ class Command(MyBaseCommand):
         
         if len(target_files) == 0:
             self.custom_log('対象ファイルがありませんでした。')
-            return
+            return False
         for uploaded_object in target_files:
             self.custom_log(f'{uploaded_object.csv_file.name}を処理します。')
         

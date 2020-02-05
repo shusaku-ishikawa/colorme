@@ -70,7 +70,6 @@ class Command(MyBaseCommand):
             self.custom_log(f'{option_instance.option_id}をデータベースに登録しました。')
     
     def run(self, user, **options):
-        return True
         if 'file' in options:
             file_id = options['file']
             target_files = UploadFile.objects.filter(id = file_id)

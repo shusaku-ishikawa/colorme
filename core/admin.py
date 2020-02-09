@@ -5,6 +5,7 @@ from django.contrib.admin.utils import quote
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from django.utils.translation import ugettext_lazy as _
+from wowma.models import *
 
 class MyUserChangeForm(UserChangeForm):
     class Meta:
@@ -32,4 +33,17 @@ class MyUserAdmin(UserAdmin):
     add_form = MyUserCreationForm
     list_display = ('username', 'wowma_auth', 'thebase_auth', 'is_staff', 'is_active', 'is_superuser')
 
+class WowmaItemAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in Item._meta.fields if field.name != "id"]
+class WowmaRegisterStockAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in RegisterStock._meta.fields if field.name != "id"]
+class WowmaChoicesStockAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in ChoicesStock._meta.fields if field.name != "id"]
+class WowmaShopCategoryAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in ShopCategory._meta.fields if field.name != "id"]
+
 admin.site.register(User, MyUserAdmin)
+admin.site.register(Item, WowmaItemAdmin)
+admin.site.register(RegisterStock, WowmaRegisterStockAdmin)
+admin.site.register(ChoicesStock, WowmaChoicesStockAdmin)
+admin.site.register(ShopCategory, WowmaShopCategoryAdmin)

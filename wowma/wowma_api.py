@@ -32,28 +32,38 @@ class WowmaApi:
             self.error = f'[{response_parsed.find("./result/error/code").text}] {response_parsed.find("./result/error/message").text}'
         return self.valid
 
+    # def fetch_shopcategories(self):
+    #     parameters = {
+    #         'shopId': self.auth_info.store_id
+    #     }
+    #     query_string = urlencode(parameters)
+    #     url = f'{WOWMA_ENDPOINT}/searchShopCtgryInfos?{query_string}'
+    #     response = requests.get(url, headers = self.get_headers('application/x-www-form-urlencoded'), proxies = self.proxies)
+    #     response_parsed = ET.fromstring(response.content)
+    #     if not self.validate_response(response_parsed):
+    #         raise Exception(self.error)
+    #     return response_parsed.findall('./shopCategoryInfo')
+    
     def fetch_categories(self):
-        parameters = {
-            'shopId': self.auth_info.store_id
-        }
-        query_string = urlencode(parameters)
-        url = f'{WOWMA_ENDPOINT}/searchShopCtgryInfos?{query_string}'
+        url = f'{WOWMA_ENDPOINT}getCategoryTagInfo'
         response = requests.get(url, headers = self.get_headers('application/x-www-form-urlencoded'), proxies = self.proxies)
         response_parsed = ET.fromstring(response.content)
         if not self.validate_response(response_parsed):
             raise Exception(self.error)
-        return response_parsed.findall('./shopCategoryInfo')
 
+        return response_parsed.findall('./resultDetail/categoryInfo/ctgryList')
     def fetch_all(self):
         all_items = []
         offset = 0
         limit = 100
         while True:
             item_elements = self.search_item_info(offset, limit)
+            
             all_items.extend(item_elements)
             if len(item_elements) < limit:
                 break
             break
+        
         return all_items
 
     def search_item_info(self, offset, limit, searchparams=None):
@@ -67,27 +77,27 @@ class WowmaApi:
         # if 'itemcode' in searchparams:
         #     parameters['itemCode'] = searchparams['itemcode']
 
-        # query_string = urlencode(parameters)
-        url = f'{WOWMA_ENDPOINT}searchItemInfos'
+        query_string = urlencode(parameters)
+        url = f'{WOWMA_ENDPOINT}searchItemInfos?{query_string}'
         response = requests.get(url, headers = self.get_headers('application/x-www-form-urlencoded'), proxies = self.proxies)
         response_parsed = ET.fromstring(response.content)
         if not self.validate_response(response_parsed):
             raise Exception(self.error)
         
         max_count = response_parsed.find('./searchResult/maxCount').text
-        return response_parsed.findall('./searchResult/resultItems')
-    
+
+        results = response_parsed.findall('./searchResult/resultItems')
+        
+        return results
+
     def add(self, request_element):
-
         url = f'{WOWMA_ENDPOINT}registerItemInfo/'
-
         response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=ET.tostring(request_element, encoding='utf-8'))
         response_parsed = ET.fromstring(response.content)
         if not self.validate_response(response_parsed):
             raise Exception(self.error)
-        return True
-
-
+        # add item object
+        
     def update_item(self, item):
         url = f'{WOWMA_ENDPOINT}updateItemInfo/'
         response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.auth_info.store_id, mode = API_MODE_UPDATE))
@@ -104,7 +114,11 @@ class WowmaApi:
             item.valid = True
         return item.valid
 
-    def delete_item(self, item):
+    def delete_item(self, id):
+        item = Item.objects.get(id = id)
+        item.delete()
+
+        return
         url = f'{WOWMA_ENDPOINT}deleteItemInfos/'
         response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.auth_info.store_id, mode = API_MDOE_DELETE))
         response_parsed = ET.fromstring(response.content)
@@ -119,3 +133,17 @@ class WowmaApi:
             # if success
             item.valid = True
         return item.valid
+    
+    def delete_shopcategory(self, shopcategory_id):
+        url = f'{WOWMA_ENDPOINT}deleteShopCtgryInfo/'
+        root = ET.Element('request')
+        shopId = ET.SubElement(root, 'shopId')
+        shopId.text = self.store_id
+        shopcategory = ET.SubElement(root, 'shopCategoryId')
+        shopcategory.text = shopcategory_id
+
+        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data = ET.tostring(root))
+        response_parsed = ET.fromstring(response.content)
+        if not self.validate_response(response_parsed):
+            raise Exception(self.error)
+        return True

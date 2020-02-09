@@ -13,26 +13,64 @@ class AuthInfo(models.Model):
     store_id = models.CharField(
         max_length = 10,
     )
-class Category(models.Model):
+
+class SerializableModel(models.Model):
+    columns = []
+    node_name = ''
+    def set_attributes(self, element):
+        for column_name, column_type in self.columns:
+            elem = element.find(column_name)
+            if elem != None and elem.text != None:
+                setattr(self, column_name, column_type(elem.text))
+        self.save()
+    
+    def serialize(self, mode = API_MODE_REGISTER):
+        root = ET.Element(self.node_name)
+        for column_name, _ in self.columns:
+            elem = ET.SubElement(root, column_name)
+            elem.text = getattr(self, column_name)
+        return root
+
+class Category(SerializableModel):
+    columns = [
+        ('ctgryId', int),
+        ('ctgryNameFullpath', str)
+    ]
+    ctgryId = models.IntegerField()
+    ctgryNameFullpath = models.CharField(max_length = 255)
+class ShopCategory(SerializableModel):
+    columns = [
+        ('shopCategoryId', int),
+        ('shopCategoryLevel', str),
+        ('shopCategoryName', str)        
+    ]
     user = models.ForeignKey(to = 'core.User', on_delete = models.CASCADE, related_name = 'wowma_categories')
     shopCategoryId = models.IntegerField(unique = True)
     shopCategoryLevel = models.CharField(max_length = 1)
     shopCategoryName = models.CharField(max_length = 255)
+    
     @property
     def category_list(self):
         return self.shopCategoryName.split(':')
-        
-    def set_attributes(self, category_element):
-        for f in vars(self):
-            if f == 'user':
-                continue
-            setattr(self, f, category_element.find(f).text)
-        self.save()
-
-class Item(models.Model):
-    
+class Item(SerializableModel):
+    columns = [
+        ('lotNumber', int),
+        ('itemName', str),
+        ('itemManagementId', str),
+        ('itemManagementName', str),
+        ('itemCode', str),
+        ('itemPrice', int),
+        ('sellMethodSegment', str),
+        ('taxSegment', str),
+        ('postageSegment', str),
+        ('description', str),
+        ('descriptionForSP', str),
+        ('descriptionForPC', str),
+        ('categoryId', str),
+        ('saleStatus', str)
+    ]
     user = models.ForeignKey(to = 'core.User', on_delete = models.CASCADE, related_name = 'wowma_items')
-    lotNumber = models.IntegerField(unique = True)
+    lotNumber = models.IntegerField(unique = True, null = True)
     itemName = models.CharField(max_length = 128)
     itemManagementId = models.CharField(max_length = 128, null = True, blank = True)
     itemManagementName = models.CharField(max_length = 128, null = True, blank = True)
@@ -42,21 +80,25 @@ class Item(models.Model):
     taxSegment = models.CharField(max_length = 1, default = '1')
     postageSegment = models.CharField(max_length = 1, default = '2')
     description = models.TextField()
+    descriptionForSP = models.TextField()
+    descriptionForPC = models.TextField()
     categoryId = models.CharField(max_length = 20, null = True, blank = True)
     saleStatus = models.CharField(max_length = 1, default = '1')
     
     def set_attributes(self, item_element):
-        for f in vars(self):
-            if f == 'user':
-                continue
-            setattr(self, f, item_element.find(f).text)
-        self.save()
+        super().set_attributes(item_element)
 
         for image_element in item_element.findall('images'):
-            image = Image(item = self)
+            image = Image(parent_item = self)
             image.set_attributes(image_element)
         
-        register_stock = RegisterStock(item = self)
+        for shop_category_element in item_element.findall('shopCategory'):
+            shop_category_name = shop_category_name.find('shopCategoryName')    
+            shop_category_obj = ShopCategory.objects.get(shopCategoryName = shop_category_name)
+            itemshopcategory = ItemShopCategory(parent_item = self, shopCategory = shop_category_obj)
+            itemshopcategory.save()
+            
+        register_stock = RegisterStock(parent_item = self)
         if item_element.find('registerStock'):
             register_stock.set_attributes(item_element.find('registerStock'))
 
@@ -65,47 +107,51 @@ class Item(models.Model):
 
     def serialize(self, mode = API_MODE_REGISTER):
         root = ET.Element(f'{mode}Item')
-        for f in vars(self):
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(slef, f)
+        for column_name, _ in self.columns:
+            elem = ET.SubElement(root, column_name)
+            elem.text = getattr(slef, column_name)
         
         for image in self.images:
             root.append(image.serialize())
         return root
 
-class Image(models.Model):
-    item = models.ForeignKey(to = Item, on_delete = models.CASCADE, related_name = 'images')
+class ItemShopCategory(SerializableModel):
+    columns = [
+        ('shopCategoryName', str),
+        ('shopCategoryDispSeq', str)
+    ]
+    parent_item = models.ForeignKey(to = Item, on_delete = models.CASCADE, related_name = 'shopCategories')
+    shopCategory = models.ForeignKey(to = ShopCategory, on_delete = models.CASCADE, related_name = 'items')
+
+class Image(SerializableModel):
+    columns = [
+        ('imageUrl', str),
+        ('imageName', str),
+        ('imageSeq', str)
+    ]
+    node_name = 'images'
+
+    parent_item = models.ForeignKey(to = Item, on_delete = models.CASCADE, related_name = 'images')
     imageUrl = models.URLField(max_length = 255)
     imageName = models.CharField(max_length = 16)
     imageSeq = models.CharField(max_length = 2)
-    def set_attributes(self, image_element):
-        for f in vars(self):
-            if f == 'item':
-                continue
-            setattr(self, f, item_element.find(f).text)
-        self.save()
-        return True
 
-    def serialize(self):
-        root = ET.Element('images')
-        for f in vars(self):
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(self, f)
-        return root
-
-class RegisterStock(models.Model):
-    item = models.OneToOneField(to = Item, on_delete = models.CASCADE)
+class RegisterStock(SerializableModel):
+    columns = [
+        ('stockSegment', str),
+        ('stockCount', str),
+        ('choicesStockHorizontalItemName', str),
+        ('choicesStockVerticalItemName', str)
+    ]
+    
+    parent_item = models.OneToOneField(to = Item, on_delete = models.CASCADE)
     stockSegment = models.CharField(max_length = 1)
     stockCount = models.CharField(max_length = 5, null = True, blank = True)
     choicesStockHorizontalItemName = models.CharField(max_length = 50)
     choicesStockVerticalItemName = models.CharField(max_length = 50)
     
     def set_attributes(self, register_stock_element):
-        for f in vars(self):
-            if f == 'item':
-                continue
-            setattr(self, f, item_element.find(f).text)
-        self.save()
+        super().set_attributes(register_stock_element)
 
         for horizontal_element in register_stock_element.findall('choicesStockHorizontals'):
             horizontal = ChoicesStockHorizontal(registerStock = self)
@@ -124,9 +170,9 @@ class RegisterStock(models.Model):
     def serialize(self, mode = API_MODE_REGISTER):
         root = ET.Element(f'{mode}Stock')
         
-        for f in vars(self):
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(slef, f)
+        for column_name, _ in self.columns:
+            elem = ET.SubElement(root, column_name)
+            elem.text = getattr(self, column_name)
         
         for hor in self.horizontals.all():
             root.append(hor.serialize())
@@ -139,77 +185,47 @@ class RegisterStock(models.Model):
 
         return root
 
-class ChoicesStockoHorizontal(models.Model):
+class ChoicesStockHorizontal(SerializableModel):
+    columns = [
+        ('choicesStockHorizontalCode', str),
+        ('choicesStockHorizontalName', str),
+        ('choicesStockHorizontalSeq', str),
+    ]
+    node_name = 'chiocesStockHorizontals'
+
     registerStock = models.ForeignKey(to = RegisterStock, on_delete = models.CASCADE, related_name = 'horizontals')
     choicesStockHorizontalCode = models.CharField(max_length = 255)
     choicesStockHorizontalName = models.CharField(max_length = 100)
     choicesStockHorizontalSeq = models.CharField(max_length = 2)
     
-    def set_attributes(self, horizontal_element):
-        for f in vars(self):
-            if f == 'registerStock':
-                continue
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(slef, f)
-        self.save()
-        return True
+class ChoicesStockVertical(SerializableModel):
+    columns = [
+        ('choicesStockVerticalCode', str),
+        ('choicesStockVerticalName', str),
+        ('choicesStockVerticalSeq', str),
+    ]
+    node_name = 'choicesStockVerticals'
 
-    def serialize(self):
-        root = ET.Element('chiocesStockHorizontals')
-        for f in vars(self):
-            if f == 'registerStock':
-                continue
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(self, f)
-        return root
 
-class ChoicesStockoVertical(models.Model):
     registerStock = models.ForeignKey(to = RegisterStock, on_delete = models.CASCADE, related_name = 'verticals')
     choicesStockVerticalCode = models.CharField(max_length = 255)
     choicesStockVerticalName = models.CharField(max_length = 100)
     choicesStockVerticalSeq = models.CharField(max_length = 2)
-    def set_attributes(self, vertical_element):
-        for f in vars(self):
-            if f == 'registerStock':
-                continue
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(slef, f)
-        self.save()
-        return True
+
         
-    def serialize(self):
-        root = ET.Element('choicesStockVerticals')
-        for f in vars(self):
-            if f == 'registerStock':
-                continue
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(self, f)
-        return root
-        
-class ChoicesStock(models.Model):
+class ChoicesStock(SerializableModel):
+    columns = [
+        ('choicesStockVerticalCode', str),
+        ('choicesStockHorizontalCode', str),
+        ('choicesStockCount', str)
+    ]
+    node_name = 'choicesStocks'
+
     registerStock = models.ForeignKey(to = RegisterStock, on_delete = models.CASCADE, related_name = 'choicesStocks')
     choicesStockVerticalCode = models.CharField(max_length = 255)
-    choicesStockoHorizontalCode = models.CharField(max_length = 255)
+    choicesStockHorizontalCode = models.CharField(max_length = 255)
     choicesStockCount = models.CharField(max_length = 5)
     
-    def set_attributes(self, vertical_element):
-        for f in vars(self):
-            if f == 'registerStock':
-                continue
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(slef, f)
-        self.save()
-        return True
-        
-    def serialize(self):
-        root = ET.Element('choicesStocks')
-        for f in vars(self):
-            if f == 'registerStock':
-                continue
-            elem = ET.SubElement(root, f)
-            elem.text = getattr(self, f)
-        return root
-
 import cgi
 def xml_escape(s):
     return cgi.escape(s)

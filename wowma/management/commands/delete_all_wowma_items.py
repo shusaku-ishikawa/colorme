@@ -16,5 +16,5 @@ class Command(MyBaseCommand):
         wowma_api = WowmaApi(user.wowma_auth)
         target_items = Item.objects.filter(user = user) 
         for item in target_items:
-            wowma_api.delete(item.item_id)
+            wowma_api.delete_item(item.id)
         

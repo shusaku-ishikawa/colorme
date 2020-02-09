@@ -2,7 +2,7 @@ from django.db import models
 
 from .enums import *
 from wowma.enums import *
-from wowma.models import Category
+from wowma.models import ShopCategory
 from thebase.models import Item as base_Item
 import xml.etree.ElementTree as ET
 from wowma.wowma_api import WowmaApi
@@ -349,10 +349,10 @@ class Item(models.Model):
         body += '<br>'
         for image in self.images:
             body += f'<img src="{image}" alt="{self.item_name}"><br>'
-        # todo banner
+        body += r'<center><div id="banner_body" style="width:100%;max-width:760px;margin-top:0;margin-bottom:0;margin-right:auto;margin-left:auto;"><div id="banner_wrapper_item" style="font-size:0;"><a href="/user/43778737/list/?categ_id=5108" style="display:inline-block;width:97%;margin-top:0;margin-bottom:5px;margin-right:1%;margin-left:1%;"><img width="100%" src="https://image.wowma.jp/43778737/shop/tops.jpg"></a><a href="/user/43778737/list/?categ_id=510811" style="display:inline-block;width:97%;margin-top:0;margin-bottom:5px;margin-right:1%;margin-left:1%;"><img width="100%" src="https://image.wowma.jp/43778737/shop/knit.jpg"></a><a href="/user/43778737/list/?categ_id=5103" style="display:inline-block;width:97%;margin-top:0;margin-bottom:5px;margin-right:1%;margin-left:1%;"><img width="100%" src="https://image.wowma.jp/43778737/shop/outer.jpg"></a><a href="/user/43778737/list/?categ_id=5110" style="display:inline-block;width:97%;margin-top:0;margin-bottom:5px;margin-right:1%;margin-left:1%;"><img width="100%" src="https://image.wowma.jp/43778737/shop/bottoms.jpg"></a><a href="/user/43778737/list/?categ_id=5111" style="display:inline-block;width:97%;margin-top:0;margin-bottom:5px;margin-right:1%;margin-left:1%;"><img width="100%" src="https://image.wowma.jp/43778737/shop/onepiece.jpg"></a><a href="/user/43778737/list/?categ_id=5109" style="display:inline-block;width:97%;margin-top:0;margin-bottom:5px;margin-right:1%;margin-left:1%;"><img width="100%" src="https://image.wowma.jp/43778737/shop/dress.jpg"></a></div></div></center>'
         return body
 
-    @property
+    @property   
     def base_add_api_params(self):
         params = {
             'title': f'{self.item_name} {self.kataban if self.kataban else ""}'.strip(),

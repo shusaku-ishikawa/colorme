@@ -40,7 +40,7 @@ class DashBoard(LoginRequiredMixin, TemplateView):
                 context['form'] = form
                 return self.render_to_response(context)
         elif operation == 'delete':
-            obj = AuthInfo.objects.get(client_id = request.user.wowma_auth.client_id)
+            obj = AuthInfo.objects.get(application_key = request.user.wowma_auth.application_key)
             obj.delete()
             messages.success(request, '認証情報を削除しました')
             return redirect('wowma:dashboard')
@@ -49,50 +49,32 @@ class DashBoard(LoginRequiredMixin, TemplateView):
 class Search(LoginRequiredMixin, ListView):
     template_name = 'wowma_searchitems.html'
     model = Item
+    paginate_by = 20
 
     def get_queryset(self, **kwargs):
         object_list = self.model.objects.filter(user = self.request.user)
+        if kwargs['q']:
+            object_list = object_list.filter(item_name__icontains = kwargs['q'])
         return object_list
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['pagename'] = 'wowma_search'
+        context['q'] = kwargs['q']
         return context
 
     def get(self, request, *args, **kwargs):
+        if 'action' in request.GET and request.GET.get('action') == 'search': 
+            if 'q' in request.session:
+                del request.session['q']
+            q = request.GET.get('q') or ''
+            request.session['q'] = q
+        else:
+            q = request.session['q'] if 'q' in request.session else None
+        
+        kwargs['q'] = q
         self.object_list = self.get_queryset(**kwargs)
         context = self.get_context_data(**kwargs)
-        limit = ITEMS_PER_PAGE
-        wowma_api = WowmaApi(request.user.wowma_auth)
-        res = wowma_api.search_item_info(10, 1)
-        print(res)
-        if 'action' in request.GET and request.GET.get('action') == 'search':
-            # if new search request
-            if 'searchparams' in request.session:
-                del request.session['searchparams']
-            itemname = request.GET.get('itemname') or ''
-            itemcode = request.GET.get('itemcode') or ''
-            searchparams = {}
-            if itemname != "":
-                searchparams['itemname'] = request.GET.get('itemname')
-            if itemcode != "":
-                searchparams['itemcode'] = request.GET.get('itemcode')
-            request.session['searchparams'] = searchparams
-        else:
-            searchparams = request.session['searchparams'] if 'searchparams' in request.session else None
-            
-        if searchparams:
-            wowma_api = WowmaApi(request.user.wowma_auth)
-            if not 'page' in request.GET:
-                page = 1
-            else:
-                page = request.GET.get('page')
-                if not page.isdecimal():
-                    pass
-                else:
-                    page = int(page) 
-            context['searchparams'] = searchparams        
-            context['search_result'] = wowma_api.search_item_info(limit, page, searchparams)
         return self.render_to_response(context)
 
 class Delete(LoginRequiredMixin, TemplateView):
@@ -126,6 +108,56 @@ class Delete(LoginRequiredMixin, TemplateView):
                 messages.success(request, f'{item.lot_number}を{operation}しました')
         return redirect('wowma:search')
 
-class Categories(LoginRequiredMixin, ListView):
-    model = Category
+class ShopCategories(LoginRequiredMixin, ListView):
+    model = ShopCategory
+    template_name = 'wowma_shopcategories.html'
+
+class Categories(LoginRequiredMixin, TemplateView):
     template_name = 'wowma_categories.html'
+    #form_class = CategoryUploadFileForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pagename'] = 'wowma_categories'
+        context['object_list'] = Category.objects.all()
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+    
+    # def post(self, request, *args, **kwargs):
+    #     context = self.get_context_data(**kwargs)
+    #     form = self.form_class(request.POST, request.FILES)
+    #     if not form.is_valid():
+    #         context['form'] = form
+    #         return self.render_to_response(context)
+    #     form.save(commit = True)
+    #     messages.success(request, '完了しました。')
+    #     return redirect('wowma:categories')
+
+class DeleteShopCategory(LoginRequiredMixin, TemplateView):
+    template_name = 'wowma_delete_shopcategories.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        selected_categories = request.GET.getlist('selected_shopcategories[]')
+        shopcategories = []
+        for shopcategory_id in selected_shopcategories:
+            shopcategories.append(ShopCategory.objects.get(shopCategoryId = shopcategory_id))
+        context['shopcategories_to_delete'] = shopcategories
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        wowma_api = WowmaApi(request.user.wowma_auth)
+        shopcategories_to_delete = request.POST.getlist('shopcategories_to_delete[]')
+        for shopcategory_id in shopcategories_to_delete:
+            try:
+                r = wowma_api.delete_shopcategory(shopcategory_id)
+            except Exception as e:
+                messages.error(request, str(e))
+            else: # if success
+                print('category successfully deleted')
+                ShopCategory.objects.get(shopCategoryId = shopcategory_id).delete()
+                messages.success(request, f'{shopcategory_id}を削除しました')
+        return redirect('wowma:shopcategories')
+       

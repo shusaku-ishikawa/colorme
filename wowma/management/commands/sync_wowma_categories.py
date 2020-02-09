@@ -16,17 +16,17 @@ class Command(MyBaseCommand):
         wowma_api = WowmaApi(user.wowma_auth)    
         # delete all items
         self.custom_log('テーブル Cateogry のデータを削除します。')
-        Cateogry.objects.filter(user = user).delete()
+        Category.objects.all().delete()
 
         try:
-            all_categories = wowma_api.fetch_all_categoeis()
+            all_categories = wowma_api.fetch_categories()
         except:
             raise Exception(f'次の理由で取得できませんでした。 {wowma_api.error}')
         else:
-            for item_element in all_items:
-                category_name = item_element.find("shopCategoryName").text
-                item = Item(user = user)
-                item.set_attributes(item_element)
-                self.custom_log(f'カテゴリ:{category_name}をデータベースに登録しました。')
+            for category in all_categories:
+                fullpath = category.find("ctgryNameFullpath").text
+                category_obj = Category()
+                category_obj.set_attributes(category)
+                self.custom_log(f'カテゴリ:{fullpath}をデータベースに登録しました。')
                 
         

@@ -1,9 +1,8 @@
 from django import forms
 from .models import *
 from .enums import *
-import copy
-        
-import csv
+import copy    
+import csv, xlrd
 from io import TextIOWrapper, StringIO
 
 class AuthInfoModelForm(forms.ModelForm):

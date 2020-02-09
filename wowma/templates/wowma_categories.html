@@ -22,71 +22,33 @@
 {% endblock %}
 
 {% block wowma_content %}
-  <form class="form-inline" method="get" action="{% url 'wowma:delete_categories' %}">
-    <div class="form-group my-2">
-      <label for="id_operation">操作</label>
-      <select name="operation" id="id_operation" class="form-control">
-        <option value="delete">削除</option>
-      </select>
-      <button type="submit" class="btn btn-warning">実行</button>
-    </div>
-    {% if not object_list %}
-      カテゴリが見つかりませんでした
-    {% else %}
     <div class="table-responsive">
       <table id="" class="table table-bordered table-striped mt-2">
         <thead>
           <th>
-            <input type="checkbox" id="id_check_all" class="">
-          </th>
-          <th>
             カテゴリID
           </th>
           <th>
-            カテゴリ名
+            フルパス
           </th>
-          <th>
-            カテゴリ番号
-          </th>
-          <th>
-            親カテゴリ番号
-          </th>
-          <th>
-            コード
-          </th>
+         
         </thead>
         <tbody>
           {% for object in object_list %}
             <tr>
               <td>
-                <input type="checkbox" class="form-control select-checkbox" name="selected_categories[]" value="{{ object.category_id }}">
+                {{ object.ctgryId }}
               </td>
-            <td>
-              {{ object.category_id }}
-            </td>
-            <td>
-              {{ object.name }}
-            </td>
-            <td>
-              {{ object.number }}
-            </td>
-            <td>
-              {% if object.parent_number == 0 %}
-              --
-              {% else %}
-              {{ object.parent_number }}
-              {% endif %}
-            </td>
-            <td>
-              {{ object.code }}
-            </td>
+              <td>
+                {{ object.ctgryNameFullpath }}
+              </td>
+            
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-  </form>
-  {% endif %}
+  
 {% endblock %}
 {% block wowma_script %}
 <script>

@@ -11,11 +11,10 @@ def execute_job_by_user(job_id):
     print(job_id)
     job.status = JOB_STATUS_IN_PROGRESS
     job.save()
-
     outstream = StringIO()
-    succeeded = call_command(job.job_name, job.user.username, stdout = outstream)
+    call_command(job.job_name, job.user.username, jobid = job.id,  stdout = outstream)
     outstream.seek(0)
+    job.refresh_from_db()
     job.log = outstream.read()
-    job.status = JOB_STATUS_COMPLETED if succeeded else JOB_STATUS_ERROR
     job.completed_at = timezone.now()
     job.save()

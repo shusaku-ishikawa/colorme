@@ -24,7 +24,6 @@
       width: 100px;
       height: auto;
     }
-    table#id_item_table thead th { position: sticky; top: 0; }
   </style>
 {% endblock %}
 
@@ -39,12 +38,8 @@
     </div>
       <button type="submit" class="btn btn-primary">検索</button>
   </form>
-  {% if search_result.error %}
-  {{ search_result.error.code }} {{ search_result.error.message }}
-  {% elif search_result.items != None %}
-  
-  {% if search_result.max_count %}
-  {{ search_result.max_count }}件ヒットしました
+
+  {% if object_list %}
   <form class="form-inline" method="get" action="{% url 'wowma:delete' %}">
     <div class="form-group my-2">
       <label for="id_operation">操作</label>
@@ -57,131 +52,150 @@
     </div>
     <div class="table-responsive">
       <table id="id_item_table" class="table table-bordered table-striped">
-        <thead class="thead-dark">
+        <thead>
           <th>
             <input type="checkbox" id="id_check_all" class="">
           </th>
           <th>
-            sale status
+            販売ステータス
           </th>
           <th>
-            Lot number
+            ロット番号
           </th>
           <th>
-            Image
+            画像
           </th>
           <th>
-            Item name
+            カテゴリ
           </th>
           <th>
-            Item management id
+            商品名
           </th>
           <th>
-            Item management name
+            商品管理ID
           </th>
           <th>
-            Item code
+            商品管理名
           </th>
           <th>
-            Item price
+            商品コード
           </th>
           <th>
-            Sell method segment
+            価格
           </th>
           <th>
-            Description
+            販売区分
           </th>
           <th>
-            Choices
+            商品説明
           </th>
-          
+          <th>
+            在庫
+          </th>
         </thead>
         <tbody>
-          {% for object in search_result.items %}
+          {% for object in object_list %}
             <tr>
               <td>
-                <input type="checkbox" class="form-control select-checkbox" name="selected_items[]" value="{{ object.lot_number }}">
+                <input type="checkbox" class="form-control select-checkbox" name="selected_items[]" value="{{ object.lotNumber }}">
               </td>
               <td>
-                {% if object.sale_status == '1' %}
-                  <span class="badge badge-success">{{ object.sale_status | display_sale_status }}</span>
+                {% if object.saleStatus == '1' %}
+                  <span class="badge badge-success">{{ object.saleStatus | display_sale_status }}</span>
                 {% else %}
-                  <span class="badge badge-dark">{{ object.sale_status | display_sale_status }}</span>
+                  <span class="badge badge-dark">{{ object.saleStatus | display_sale_status }}</span>
                 {% endif %}
                 </td>
               <td>
-                {{ object.lot_number }}
+                {{ object.lotNumber }}
               </td>
               <td>
-                <img class="item-thumbnail" src="{{ object.images.0.image_url }}">
-                {% include 'wowma_searchitems_images_modal.html' with images=object.images %}
-                  <button class="image-modal-open btn btn-primary">全て表示</button>
+                <img class="item-thumbnail" src="{{ object.images.all.0.imageUrl }}">
+                {% include 'wowma_searchitems_images_modal.html' with images=object.images.all %}
+                  <button class="image-modal-open btn btn-sm btn-primary">全て表示</button>
               </td>
               <td>
-                {{ object.item_name |left:10 }}
+                {{ object.categoryId }}
               </td>
               <td>
-                {{ object.item_management_id | default_if_none:'-' }}
+                {{ object.itemName |left:10 }}
               </td>
               <td>
-                {{ object.item_management_name | default_if_none:'-' }}
+                {{ object.itemManagementId | default_if_none:'-' }}
               </td>
               <td>
-                {{ object.item_code }}
+                {{ object.itemManagementName | default_if_none:'-' }}
               </td>
               <td>
-                ¥{{ object.item_price | intcomma }}
+                {{ object.itemCode }}
               </td>
               <td>
-                {{ object.sell_method_segment | display_sell_method }}
+                ¥{{ object.itemPrice | intcomma }}
+              </td>
+              <td>
+                {{ object.sellMethodSegment | display_sell_method }}
               </td>
               <td>
                 {% include 'wowma_searchitems_detail_modal.html' with object=object %}
-                <button class="btn btn-primary modal-open">表示</button>
+                <button class="btn btn-sm btn-primary modal-open">表示</button>
               </td>
               <td>
-                {% for register_stock in object.register_stocks %}
+                {% if object.registerstock %}
+
                 <table class="table table-sm">
                   <thead>
                     <th></th>
-                    {% for horizontal_choice in register_stock.choices_stock_horizontals %}
-                    <th>
-                      {{ horizontal_choice.choices_stock_horizontal_name }}
-                    </th>
-                    {% endfor %}
+                    {% if object.registerstock.horizontals.all %}
+                      {% for horizontal_choice in object.registerstock.horizontals.all %}
+                      <th>
+                        {{ horizontal_choice.choicesStockHorizontalName }}
+                      </th>
+                      {% endfor %}
+                    {% else %}
+                      <th>
+                        在庫
+                      </th>
+                    {% endif %}
                   </thead>
                   <tbody>
-                    {% for vertical_choice in register_stock.choices_stock_verticals %}
+                    {% for vertical_choice in object.registerstock.verticals.all %}
                     <tr>
                       <th>
-                        {{ vertical_choice.choices_stock_vertical_name }}
+                        {{ vertical_choice.choicesStockVerticalName }}
                       </th>
-                      {% for horizontal_choice in register_stock.choices_stock_horizontals %}
-                      <td>
-                        {% with vertical_choice.choices_stock_vertical_code|add:'^'|add:horizontal_choice.choices_stock_horizontal_code as stock_key %}
-                        {{ register_stock|stock_by_choice:stock_key }}
-                        {% endwith %}
-                      </td>
-                      {% endfor %}
+                      {% if object.registerstock.horizontals.all %}
+                        {% for horizontal_choice in object.registerstock.horizontals.all %}
+                        <td>
+                          {% with vertical_choice.choicesStockVerticalCode|add:'^'|add:horizontal_choice.choicesStockHorizontalCode as stock_key %}
+                          {{ object.registerstock|stock_by_choice:stock_key }}
+                          {% endwith %}
+                        </td>
+                        {% endfor %}
+                      {% else %}
+                        <td>
+                          {% with vertical_choice.choicesStockVerticalCode|add:'^' as stock_key %}
+                          {{ object.registerstock|stock_by_choice:stock_key }}
+                          {% endwith %}
+                        </td>
+                      {% endif %}
                     </tr>
                     {% endfor %}
                   </tbody>
                 </table>
-                {% endfor %}
+                {% else %}
+                no register stock
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+    {% include 'pagination.html' %}
   </form>
   {% include 'wowma_searchitems_pagination.html' %}
   {% else %}
   該当する商品が見つかりませんでした
-  {% endif %}
-  {% else %}
-    <!-- not yet searched -->
-    検索してください
   {% endif %}
 {% endblock %}
 {% block wowma_script %}

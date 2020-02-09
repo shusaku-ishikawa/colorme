@@ -21,7 +21,12 @@ def isnum(subj):
 @register.filter 
 def stock_by_choice(obj, stock_key):
     (vertical_key, horizontal_key) = stock_key.split('^')
-    return [s.choices_stock_count for s in obj.choices_stocks if s.choices_stock_horizontal_code == horizontal_key and s.choices_stock_vertical_code == vertical_key][0]
+    if not vertical_key and horizontal_key:
+        return [s.choicesStockCount for s in obj.choicesStocks.all() if s.choicesStockHorizontalCode == horizontal_key][0]
+    elif vertical_key and not horizontal_key:
+        return [s.choicesStockCount for s in obj.choicesStocks.all() if s.choicesStockVerticalCode == vertical_key][0]
+    else:
+        return [s.choicesStockCount for s in obj.choicesStocks.all() if s.choicesStockHorizontalCode == horizontal_key and s.choicesStockVerticalCode == vertical_key][0]
 
 @register.filter
 def left(value, l):

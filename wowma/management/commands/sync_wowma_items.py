@@ -18,7 +18,8 @@ class Command(MyBaseCommand):
         self.custom_log('テーブル Item のデータを削除します。')
         Item.objects.filter(user = user).delete()
         try:
-            all_items = wowma_api.fetch_all()
+            #all_items = wowma_api.fetch_all()
+            all_items = wowma_api.search_item_info(1, 10)
         except:
             raise Exception(f'次の理由で取得できませんでした。 {wowma_api.error}')
         else:

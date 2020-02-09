@@ -60,7 +60,7 @@
         <a href="{% url 'thebase:search' %}">BASE商品検索</a>
       </li>
       <li class="{% if pagename == 'thebase_categories' %}active{% endif %}">
-        <a href="{% url 'thebase:categories' %}">BASEカテゴリ一覧</a>
+        <a href="{% url 'thebase:categories' %}">BASEカテゴリ</a>
       </li>
       <li class="{% if pagename == 'wowma_dashboard' %}active{% endif %}">
         <a href="{% url 'wowma:dashboard' %}">Wowma認証情報</a>
@@ -68,6 +68,10 @@
       <li class="{% if pagename == 'wowma_search' %}active{% endif %}">
         <a href="{% url 'wowma:search' %}">Wowma商品検索</a>
       </li>
+      <li class="{% if pagename == 'wowma_categories' %}active{% endif %}">
+        <a href="{% url 'wowma:categories' %}">Wowmaカテゴリ</a>
+      </li>
+      
     </ul>
   </nav>
   

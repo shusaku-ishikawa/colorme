@@ -49,16 +49,18 @@ class DashBoard(LoginRequiredMixin, TemplateView):
 class Search(LoginRequiredMixin, ListView):
     template_name = 'wowma_searchitems.html'
     model = Item
-    paginate_by = 20
+    paginate_by = 3
 
     def get_queryset(self, **kwargs):
-        object_list = self.model.objects.filter(user = self.request.user)
+        self.queryset = self.model.objects.filter(user = self.request.user)
         if kwargs['q']:
-            object_list = object_list.filter(item_name__icontains = kwargs['q'])
-        return object_list
+            self.queryset = self.queryset.filter(itemName__icontains = kwargs['q'])
+        queryset = super().get_queryset()
+        return queryset
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        object_list = self.get_queryset(**kwargs)
+        context = super().get_context_data(object_list = object_list, **kwargs)
         context['pagename'] = 'wowma_search'
         context['q'] = kwargs['q']
         return context
@@ -73,6 +75,7 @@ class Search(LoginRequiredMixin, ListView):
             q = request.session['q'] if 'q' in request.session else None
         
         kwargs['q'] = q
+
         self.object_list = self.get_queryset(**kwargs)
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
@@ -112,14 +115,15 @@ class ShopCategories(LoginRequiredMixin, ListView):
     model = ShopCategory
     template_name = 'wowma_shopcategories.html'
 
-class Categories(LoginRequiredMixin, TemplateView):
+class Categories(LoginRequiredMixin, ListView):
     template_name = 'wowma_categories.html'
     #form_class = CategoryUploadFileForm
+    model = Category
+    paginate_by = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['pagename'] = 'wowma_categories'
-        context['object_list'] = Category.objects.all()
         return context
 
     def get(self, request, *args, **kwargs):

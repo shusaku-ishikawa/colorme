@@ -43,10 +43,11 @@ class Search(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self, **kwargs):
-        object_list = self.model.objects.filter(user = self.request.user)
+        self.queryset = self.model.objects.filter(user = self.request.user)
         if kwargs['q']:
-            object_list = object_list.filter(item_name__icontains = kwargs['q'])
-        return object_list
+            self.queryset = self.queryset.filter(item_name__icontains = kwargs['q'])
+        queryset = super().get_queryset()
+        return queryset
 
     def get(self, request, *args, **kwargs):
         if 'action' in request.GET and request.GET.get('action') == 'search': 

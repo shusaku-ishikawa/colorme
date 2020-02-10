@@ -18,7 +18,7 @@ class MyBaseCommand(BaseCommand):
         self.stdout.write(f'{timezone.now().strftime("%Y/%m/%d %H:%M:%S")} {content}', ending='<br>')
     
     def handle(self, *args, **options):
-        if 'jobid' in options:
+        if 'jobid' in options and options['jobid']:
             job = Job.objects.get(id = options['jobid'])
         else:
             job = None

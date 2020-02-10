@@ -93,8 +93,12 @@ class Item(SerializableModel):
             image.set_attributes(image_element)
         
         for shop_category_element in item_element.findall('shopCategory'):
-            shop_category_name = shop_category_name.find('shopCategoryName')    
-            shop_category_obj = ShopCategory.objects.get(shopCategoryName = shop_category_name)
+            shop_category_name = shop_category_element.find('shopCategoryName').text
+            try:
+                shop_category_obj = ShopCategory.objects.get(shopCategoryName = shop_category_name)
+            except ShopCategory.DoesNotExist:
+                print(shop_category_name)
+                break
             itemshopcategory = ItemShopCategory(parent_item = self, shopCategory = shop_category_obj)
             itemshopcategory.save()
             
@@ -114,6 +118,11 @@ class Item(SerializableModel):
         for image in self.images:
             root.append(image.serialize())
         return root
+    @property
+    def category_name(self):
+        if self.categoryId:
+            category = Category.objects.get(ctgryId = self.categoryId)
+            return category.ctgryNameFullpath
 
 class ItemShopCategory(SerializableModel):
     columns = [

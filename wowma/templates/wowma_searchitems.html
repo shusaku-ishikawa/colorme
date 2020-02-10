@@ -115,7 +115,7 @@
                   <button class="image-modal-open btn btn-sm btn-primary">全て表示</button>
               </td>
               <td>
-                {{ object.categoryId }}
+                {{ object.category_name }}
               </td>
               <td>
                 {{ object.itemName |left:10 }}
@@ -191,9 +191,8 @@
         </tbody>
       </table>
     </div>
-    {% include 'pagination.html' %}
   </form>
-  {% include 'wowma_searchitems_pagination.html' %}
+  {% include 'pagination.html' %}
   {% else %}
   該当する商品が見つかりませんでした
   {% endif %}

@@ -44,7 +44,6 @@ class MyBaseCommand(BaseCommand):
         else:
             self.custom_log(f'{self.task_name}が終了しました。')
             if job != None:
-                self.custom_log('hogehoghe')
                 job.status = JOB_STATUS_COMPLETED
                 job.save()
 

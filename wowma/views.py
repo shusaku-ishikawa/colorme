@@ -9,7 +9,7 @@ from .models import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 import csv
 from io import TextIOWrapper, StringIO
-
+from colorme.models import Item as colorme_Item
 from django.contrib import messages
 
 
@@ -72,6 +72,8 @@ class Search(LoginRequiredMixin, ListView):
             q = request.GET.get('q') or ''
             request.session['q'] = q
         else:
+            if 'q' in request.session:
+                del request.session['q']
             q = request.session['q'] if 'q' in request.session else None
         
         kwargs['q'] = q

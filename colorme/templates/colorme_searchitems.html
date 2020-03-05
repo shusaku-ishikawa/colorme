@@ -28,7 +28,7 @@
     <div class="form-group">
     <label for="id-itemname">q(スペース区切り):</label>
     <div class="ml-2 mr-2">
-      <input type="text" name="q" class="form-control" id="id-q" value="{{ q | default_if_none:'' }}">
+      <input type="text" name="q" class="form-control" id="id-q" value="{{ request.session.q }}">
     </div>
   </div>
     <button type="submit" class="btn btn-primary">検索</button>
@@ -38,11 +38,12 @@
     該当する商品が見つかりませんでした
   {% else %}
 
-  <form class="form-inline" method="get" action="{% url 'colorme:delete' %}">
+  <form class="form-inline" method="get" action="{% url 'colorme:operation' %}">
     <div class="form-group my-2">
       <label for="id_operation">操作</label>
       <select name="operation" id="id_operation" class="form-control">
         <option value="delete">削除</option>
+        <option value="to_wowma">Wowmaへ登録</option>
       </select>
       <button type="submit" class="btn btn-warning">実行</button>
     </div>
@@ -90,10 +91,9 @@
                 <input type="checkbox" class="form-control select-checkbox" name="selected_items[]" value="{{ object.item_id }}">
               </td>
               <td>
-               
                 <img class="img-thumbnail" alt="extra" src="{{ object.image_url }}"><br>
                 {% include 'colorme_searchitems_images_modal.html' with images=object.images %}
-                <button class="image-modal-open btn btn-sm btn-primary">全て表示</button>
+                <button class="image-modal-open btn btn-block btn-sm btn-primary">全て表示</button>
               </td>
               <td>
                 {{ object.item_id }}
@@ -126,10 +126,10 @@
                 <table class="table table-sm">
                   <thead>
                     <th>
-                      option1
+                      {{ object.option_1_name }}
                     </th>
                     <th>
-                      option2
+                      {{ object.option_2_name }}
                     </th>
                     <th>
                       option id

@@ -27,7 +27,7 @@
     <div class="form-group">
     <label for="id-itemname">q(スペース区切り):</label>
     <div class="ml-2 mr-2">
-      <input type="text" name="q" class="form-control" id="id-q" value="{{ q | default_if_none:'' }}">
+      <input type="text" name="q" class="form-control" id="id-q" value="{{ request.session.q }}">
     </div>
   </div>
     <button type="submit" class="btn btn-primary">検索</button>

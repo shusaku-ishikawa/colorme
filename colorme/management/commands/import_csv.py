@@ -41,8 +41,8 @@ class Command(MyBaseCommand):
         except Item.DoesNotExist:
             raise Exception(f'[{row[3]}]ひもづく商品が登録されていません。')
         if row[1] == 'name':
-            item.option_1 = row[2]
-            item.option_2 = row[3]
+            item.option_1_name = row[2]
+            item.option_2_name = row[3]
             item.save()
             return True
 

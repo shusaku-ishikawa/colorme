@@ -29,21 +29,11 @@ class WowmaApi:
         status = response_parsed.find('./result/status').text
         if status != API_STATUS_SUCCESS:
             self.valid = False
-            self.error = f'[{response_parsed.find("./result/error/code").text}] {response_parsed.find("./result/error/message").text}'
+            error_elem = response_parsed.find('.//error')
+
+            self.error = f'[{error_elem.find("./code").text}] {error_elem.find("./message").text}'
         return self.valid
 
-    # def fetch_shopcategories(self):
-    #     parameters = {
-    #         'shopId': self.auth_info.store_id
-    #     }
-    #     query_string = urlencode(parameters)
-    #     url = f'{WOWMA_ENDPOINT}/searchShopCtgryInfos?{query_string}'
-    #     response = requests.get(url, headers = self.get_headers('application/x-www-form-urlencoded'), proxies = self.proxies)
-    #     response_parsed = ET.fromstring(response.content)
-    #     if not self.validate_response(response_parsed):
-    #         raise Exception(self.error)
-    #     return response_parsed.findall('./shopCategoryInfo')
-    
     def fetch_categories(self):
         url = f'{WOWMA_ENDPOINT}getCategoryTagInfo'
         response = requests.get(url, headers = self.get_headers('application/x-www-form-urlencoded'), proxies = self.proxies)
@@ -72,11 +62,6 @@ class WowmaApi:
             'totalCount': limit,
             'startCount': offset
         }
-        # if 'itemname' in searchparams:
-        #     parameters['itemName'] = searchparams['itemname']
-        # if 'itemcode' in searchparams:
-        #     parameters['itemCode'] = searchparams['itemcode']
-
         query_string = urlencode(parameters)
         url = f'{WOWMA_ENDPOINT}searchItemInfos?{query_string}'
         response = requests.get(url, headers = self.get_headers('application/x-www-form-urlencoded'), proxies = self.proxies)
@@ -89,61 +74,40 @@ class WowmaApi:
         results = response_parsed.findall('./searchResult/resultItems')
         
         return results
-
-    def add(self, request_element):
-        url = f'{WOWMA_ENDPOINT}registerItemInfo/'
-        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=ET.tostring(request_element, encoding='utf-8'))
-        response_parsed = ET.fromstring(response.content)
-        if not self.validate_response(response_parsed):
-            raise Exception(self.error)
-        # add item object
-        
-    def update_item(self, item):
-        url = f'{WOWMA_ENDPOINT}updateItemInfo/'
-        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.auth_info.store_id, mode = API_MODE_UPDATE))
-        response_parsed = ET.fromstring(response.content)
-        result_status = response_parsed.find('./result/status').text      
-        if result_status == API_STATUS_ERROR:     
-            error = response_parsed.find('./updateResult/error')
-            error_code = error.find('./code').text
-            error_message = error.find('./message').text
-            item.valid = False
-            item.error = f'{error_code}:{error_message}'
-        else:
-            # if success
-            item.valid = True
-        return item.valid
-
-    def delete_item(self, id):
-        item = Item.objects.get(id = id)
-        item.delete()
-
-        return
-        url = f'{WOWMA_ENDPOINT}deleteItemInfos/'
-        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.create_params(self.auth_info.store_id, mode = API_MDOE_DELETE))
-        response_parsed = ET.fromstring(response.content)
-        result_status = response_parsed.find('./result/status').text      
-        if result_status == API_STATUS_ERROR:     
-            error = response_parsed.find('./deleteResult/error')
-            error_code = error.find('./code').text
-            error_message = error.find('./message').text
-            item.valid = False
-            item.error = f'{error_code}:{error_message}'
-        else:
-            # if success
-            item.valid = True
-        return item.valid
     
-    def delete_shopcategory(self, shopcategory_id):
-        url = f'{WOWMA_ENDPOINT}deleteShopCtgryInfo/'
-        root = ET.Element('request')
-        shopId = ET.SubElement(root, 'shopId')
-        shopId.text = self.store_id
-        shopcategory = ET.SubElement(root, 'shopCategoryId')
-        shopcategory.text = shopcategory_id
+    def add_or_edit(self, colorme_item):
+        try:
+            wowma_item = Item.objects.get(itemManagementId = colorme_item.kataban)
+        except Item.DoesNotExist:
+            # if new
+            mode = API_MODE_REGISTER
+            lotNumber = None
+        else:
+            mode = API_MODE_UPDATE
+            lotNumber = wowma_item.lotNumber
 
-        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data = ET.tostring(root))
+        url = f'{WOWMA_ENDPOINT}{mode}ItemInfo/'
+        params = colorme_item.wowma_api_params(self.auth_info.store_id, mode, lotNumber = lotNumber)
+        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data = params)
         response_parsed = ET.fromstring(response.content)
         if not self.validate_response(response_parsed):
             raise Exception(self.error)
+        
+        if mode == API_MODE_REGISTER:
+            item = Item(user = self.auth_info.user)
+            register_item = colorme_item.xml_serialize_item(mode = API_MODE_REGISTER)
+            register_stock = colorme_item.xml_serialize_stock(mode = API_MODE_REGISTER)
+            register_item.append(register_stock)
+            item.set_attributes(register_item)
+
+        return True
+
+    def delete(self, id):
+        item = Item.objects.get(id = id)
+        url = f'{WOWMA_ENDPOINT}deleteItemInfos/'
+        response = requests.post(url, headers = self.get_headers('application/xml; charset=utf-8'), proxies = self.proxies, data=item.delete_request_param(self.auth_info.store_id))
+        response_parsed = ET.fromstring(response.content)
+        if not self.validate_response(response_parsed):
+            raise Exception(self.error)
+        item.delete()
         return True

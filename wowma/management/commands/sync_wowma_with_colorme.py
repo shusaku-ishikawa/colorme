@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from colorme.models import Item as colorme_Item
-from thebase.models import Item as thebase_Item
+from wowma.models import Item as wowma_Item
 from colorme.enums import *
 from django.utils import timezone
 from core.models import User
@@ -18,11 +18,11 @@ class Command(MyBaseCommand):
         for colorme_item in colorme_Item.objects.filter(user = user):
             self.custom_log(f'{colorme_item.item_name}を処理します。')
             try:    
-                wowma_item = wowma_Item.objects.get(identifier = colorme_item.kataban)
+                wowma_item = wowma_Item.objects.get(itemManagementId = colorme_item.kataban)
             except wowma_Item.DoesNotExist:
                 # if new
                 try:
-                    item = thebase_api.add(colorme_item.wowma_add_api_params)
+                    item = wowma_api.add(colorme_item.wowma_add_api_params(user.wowma_auth.store_id))
                 except Exception as e:
                     self.custom_log(f'次の理由で登録されませんでした。{str(e)}')
                 else:
@@ -33,8 +33,9 @@ class Command(MyBaseCommand):
                     register_stock.set_attributes(colorme_item.xml_serialize_stock)
                     
             else: # if update
+                pass
                 try:
-                    item = thebase_api.edit(colorme_item.wowma_edit_api_params(base_item), colorme_item.categories, colorme_item.images)
+                    item = wowma_api.edit(colorme_item.wowma_edit_api_params(user.wowma_auth.store_id))
                 except Exception as e:
                     self.custom_log(f'次の理由で更新されませんでした。{str(e)}')
                 else:

@@ -6,7 +6,7 @@ from wowma.models import ShopCategory
 from thebase.models import Item as base_Item
 import xml.etree.ElementTree as ET
 from wowma.wowma_api import WowmaApi
-
+import base64
 class Item(models.Model):
     user = models.ForeignKey(
         to = 'core.User',
@@ -325,6 +325,27 @@ class Item(models.Model):
         blank = True
     )
     @property
+    def thebase_item_tax_type(self):
+        return 1 if 'しない' in self.discount_tax_rate else 2,
+    @property
+    def thebase_visible(self):
+        return 1 if 'する' in self.display_status else 0
+    @property
+    def thebase_price(self):
+        return self.sell_price - 500 if self.sell_price > 500 else 100
+    
+
+    @property
+    def wowma_price(self):
+        return str(self.sell_price - 300)
+
+    @property
+    def wowma_sale_status(self):
+        if 'する' in self.display_status:
+            return '1' # 販売中
+        else:
+            return '2' # 販売終了
+    @property
     def images(self):
         if not self.image_url:
             return []
@@ -357,10 +378,10 @@ class Item(models.Model):
         params = {
             'title': f'{self.item_name} {self.kataban if self.kataban else ""}'.strip(),
             'detail': self.custom_description,
-            'price': self.sell_price - 500 if self.sell_price > 500 else 100,
-            'item_tax_type': 1 if 'しない' in self.discount_tax_rate else 2,
+            'price': self.thebase_price,
+            'item_tax_type': self.thebase_item_tax_type,
             'stock': self.stock_count,
-            'visible': 1 if 'する' in self.display_status else 0,
+            'visible': self.thebase_visible,
             'identifier': self.kataban,
             'list_order': self.display_seq
         }
@@ -371,15 +392,14 @@ class Item(models.Model):
         return params
     
     @property
-    def wowma_shopcategories(self):
-        if self.category_1 and not self.category_2:
-            return self.category_1
-        elif self.category_2:
-            return f'{self.category_1}:{self.category_2}'
-        return None
+    def wowma_cateogry_id(self):
+        return '2903' # for test
 
-    def xml_serialize_item(self, mode = API_MODE_REGISTER):
+    def xml_serialize_item(self, mode, lotNumber = None):
         register_item = ET.Element(f'{mode}Item')
+        if mode in [API_MODE_UPDATE, API_MDOE_DELETE]:
+            lot = ET.SubElement(register_item, 'lotNumber')
+            lot.text = lotNumber
         item_name = ET.SubElement(register_item, 'itemName')
         item_name.text = f"送料無料 {self.item_name}"
         item_management_id = ET.SubElement(register_item, 'itemManagementId')
@@ -389,7 +409,7 @@ class Item(models.Model):
         item_code = ET.SubElement(register_item, 'itemCode')
         item_code.text = self.kataban
         item_price = ET.SubElement(register_item, 'itemPrice')
-        item_price.text = self.sell_price - 300
+        item_price.text = self.wowma_price
         sell_method_segment = ET.SubElement(register_item, 'sellMethodSegment')
         sell_method_segment.text = '1' # 通常
         tax_segment = ET.SubElement(register_item, 'taxSegment')
@@ -397,32 +417,90 @@ class Item(models.Model):
         postage_segment = ET.SubElement(register_item, 'postageSegment')
         postage_segment.text = '2' # 送料込み
         description = ET.SubElement(register_item, 'description')
-        description.text = self.custom_description
-        for index, image_url in enumerate(self.images):
+        description.text = '<br>' #self.custom_description
+        description_for_sp = ET.SubElement(register_item, 'descriptionForSP')
+        description_for_sp.text = self.custom_description
+        description_for_pc = ET.SubElement(register_item, 'descriptionForPC')
+        description_for_pc.text = self.custom_description
+        
+        for index, image_url_text in enumerate(self.images):
             image_root = ET.Element('images')
             image_url = ET.SubElement(image_root, 'imageUrl')
-            image_url.text = image_url
+            image_url.text = image_url_text
             image_name = ET.SubElement(image_root, 'imageName')
-            image_name.text = f'{self.kataban}_image{index + 1}'
+            image_name.text = f'{self.kataban}_{index + 1}'
             image_seq = ET.SubElement(image_root, 'imageSeq')
-            image_seq.text = index + 1
+            image_seq.text = str(index + 1)
             register_item.append(image_root)
 
-        #category_id = ET.SubElement(register_item, 'categoryId')
-        if self.wowma_shopcategories:
-            shop_category = ET.SubElement(register_item, 'shopCategory')
-            shop_category_name = ET.SubElement(shop_category, 'shopCategoryName')
-            shop_category_name.text = self.wowma_shopcategories
-        
+        category_id = ET.SubElement(register_item, 'categoryId')
+        category_id.text = self.wowma_cateogry_id
+        sale_status = ET.SubElement(register_item, 'saleStatus')
+        sale_status.text = self.wowma_sale_status
         return register_item
+
+    def _b64encode(self, target):
+        return base64.b64encode(target.encode('utf-8')).decode('ascii').replace('=', "")
+
     def xml_serialize_stock(self, mode = API_MODE_REGISTER):
         register_stock = ET.Element(f'{mode}Stock')
+        stock_segment = ET.SubElement(register_stock, 'stockSegment')
+        if self.options.all():
+            stock_segment.text = '2'
+            stock_count = ET.SubElement(register_stock, 'stockCount')
+            stock_count.text = str(self.stock_count)
+        else:
+            stock_segment.text = '1'
+        
+        vertical_choice_name = ET.SubElement(register_stock, 'choicesStockVerticalItemName')
+        vertical_choice_name.text = self.option_1_name
+        vertical_choice_value_list = [op.option_1_value for op in self.options.all()]
+        vertical_choice_value_list_no_dups = list(dict.fromkeys(vertical_choice_value_list))
 
-    @property
-    def wowma_add_api_params(self):
+        for index, vertical_choice_value in enumerate(vertical_choice_value_list_no_dups):
+            groupelem = ET.SubElement(register_stock, 'choicesStockVerticals')
+            code = ET.SubElement(groupelem, 'choicesStockVerticalCode')
+            code.text = self._b64encode(vertical_choice_value)
+            name = ET.SubElement(groupelem, 'choicesStockVerticalName')
+            name.text = vertical_choice_value
+            seq = ET.SubElement(groupelem, 'choicesStockVerticalSeq')
+            seq.text = str(index + 1)
+
+        horizontal_item_name = ET.SubElement(register_stock, 'choicesStockHorizontalItemName')
+        horizontal_item_name.text = self.option_2_name
+        horizontal_choice_value_list = [op.option_2_value for op in self.options.all()]
+        horizontal_choice_value_list_no_dups = list(dict.fromkeys(horizontal_choice_value_list))
+        if not (horizontal_choice_value_list_no_dups[0] == None):
+            for index, horizontal_choice_value in enumerate(horizontal_choice_value_list_no_dups):
+                groupelem = ET.SubElement(register_stock, 'choicesStockHorizontals')
+                code = ET.SubElement(groupelem, 'choicesStockHorizontalCode')
+                code.text = self._b64encode(horizontal_choice_value)
+                name = ET.SubElement(groupelem, 'choicesStockHorizontalName')
+                name.text = horizontal_choice_value
+                seq = ET.SubElement(groupelem, 'choicesStockHorizontalSeq')
+                seq.text = str(index + 1)
+        
+        for op in self.options.all():
+            groupelem = ET.SubElement(register_stock, 'choicesStocks')
+            verticalcode = ET.SubElement(groupelem, 'choicesStockVerticalCode')
+            verticalcode.text = self._b64encode(op.option_1_value)
+            if op.option_2_value:
+                horizontalcode = ET.SubElement(groupelem, 'choicesStockHorizontalCode')
+                horizontalcode.text = self._b64encode(op.option_2_value)
+            choicesstockcount = ET.SubElement(groupelem, 'choicesStockCount')
+            choicesstockcount.text = str(op.stock_count)
+        return register_stock
+
+    def wowma_api_params(self, shopId, mode, lotNumber = None):
         request = ET.Element('request')
-        register_item = self.xml_serialize_item(mode = API_MODE_REGISTER)
-        register_stock = self.xml_serialize_stock(mode = API_MODE_REGISTER)
+        shopid = ET.SubElement(request, 'shopId')
+        shopid.text = shopId
+        register_item = self.xml_serialize_item(mode, lotNumber=lotNumber)
+        register_stock = self.xml_serialize_stock(mode)
+        request.append(register_item)
+        request.append(register_stock)
+        print(ET.tostring(request))
+        return ET.tostring(request)
 
     def base_edit_api_params(self, base_item):
         params = self.base_add_api_params

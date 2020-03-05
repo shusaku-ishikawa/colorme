@@ -38,6 +38,7 @@ class Category(SerializableModel):
     ]
     ctgryId = models.IntegerField()
     ctgryNameFullpath = models.CharField(max_length = 255)
+    
 class ShopCategory(SerializableModel):
     columns = [
         ('shopCategoryId', int),
@@ -91,17 +92,7 @@ class Item(SerializableModel):
         for image_element in item_element.findall('images'):
             image = Image(parent_item = self)
             image.set_attributes(image_element)
-        
-        for shop_category_element in item_element.findall('shopCategory'):
-            shop_category_name = shop_category_element.find('shopCategoryName').text
-            try:
-                shop_category_obj = ShopCategory.objects.get(shopCategoryName = shop_category_name)
-            except ShopCategory.DoesNotExist:
-                print(shop_category_name)
-                break
-            itemshopcategory = ItemShopCategory(parent_item = self, shopCategory = shop_category_obj)
-            itemshopcategory.save()
-            
+         
         register_stock = RegisterStock(parent_item = self)
         if item_element.find('registerStock'):
             register_stock.set_attributes(item_element.find('registerStock'))
@@ -118,6 +109,16 @@ class Item(SerializableModel):
         for image in self.images:
             root.append(image.serialize())
         return root
+    
+    def delete_request_param(self, shop_id):
+        root = ET.Element('request')
+        shop_id = ET.SubElement(root, 'shopId')
+        shop_id.text = shop_id
+        delete_item_info = ET.SubElement(root, 'deleteItemInfo')
+        lotnumber = ET.SubElement(delete_item_info, 'lotNumber')
+        lotnumber.text = self.lotNumber
+        return ET.tostring(root, encoding='utf-8')
+
     @property
     def category_name(self):
         if self.categoryId:

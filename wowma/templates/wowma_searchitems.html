@@ -33,7 +33,7 @@
      <div class="form-group">
       <label for="id-itemname">itemName(部分一致):</label>
       <div class="ml-2 mr-2">
-       <input type="text" name="itemname" class="form-control" id="id-itemname" value="{{ searchparams.itemname }}">
+       <input type="text" name="q" class="form-control" id="id-itemname" value="{{ request.session.q }}">
      </div>
     </div>
       <button type="submit" class="btn btn-primary">検索</button>
@@ -112,13 +112,13 @@
               <td>
                 <img class="item-thumbnail" src="{{ object.images.all.0.imageUrl }}">
                 {% include 'wowma_searchitems_images_modal.html' with images=object.images.all %}
-                  <button class="image-modal-open btn btn-sm btn-primary">全て表示</button>
+                  <button class="image-modal-open btn btn-block btn-sm btn-primary">全て表示</button>
               </td>
               <td>
                 {{ object.category_name }}
               </td>
               <td>
-                {{ object.itemName |left:10 }}
+                {{ object.itemName  }}
               </td>
               <td>
                 {{ object.itemManagementId | default_if_none:'-' }}
@@ -140,8 +140,7 @@
                 <button class="btn btn-sm btn-primary modal-open">表示</button>
               </td>
               <td>
-                {% if object.registerstock %}
-
+                {% if object.registerstock.verticals.all %}
                 <table class="table table-sm">
                   <thead>
                     <th></th>
@@ -183,7 +182,7 @@
                   </tbody>
                 </table>
                 {% else %}
-                no register stock
+                  {{ object.registerstock.stockCount }}
                 {% endif %}
               </td>
             </tr>

@@ -56,6 +56,8 @@ class Search(LoginRequiredMixin, ListView):
             q = request.GET.get('q') or ''
             request.session['q'] = q
         else:
+            if 'q' in request.session:
+                del request.session['q']
             q = request.session['q'] if 'q' in request.session else None
         
         kwargs['q'] = q
@@ -64,8 +66,13 @@ class Search(LoginRequiredMixin, ListView):
         
         return self.render_to_response(context)
         
-class Delete(LoginRequiredMixin, TemplateView):
-    template_name = 'colorme_delete.html'
+class Operation(LoginRequiredMixin, TemplateView):
+    template_name = 'colorme_operation_confirm.html'
+
+    operation_text = {
+        'delete': '削除',
+        'to_wowma': 'Wowmaへ登録'
+    }
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         operation = request.GET.get('operation')
@@ -74,15 +81,30 @@ class Delete(LoginRequiredMixin, TemplateView):
         for item_id in selected_items:
             items.append(Item.objects.get(item_id = item_id))
 
-        context['items_to_delete'] = items
+        context['selected_items'] = items
+        context['operation'] = operation
+        context['operation_text'] = self.operation_text.get(operation)
+
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        items_to_delete = request.POST.getlist('items_to_delete[]')
-        for item_id in items_to_delete:
-            item = Item.objects.get(item_id = item_id)
-            item.delete()
-            messages.success(request, f'{item.item_id}を削除しました')
+        items = request.POST.getlist('selected_items[]')
+        operation = request.POST.get('operation')
+        
+        item_list = [Item.objects.get(item_id = item_id) for item_id in items]
+        if operation == 'delete':
+            for item in item_list:
+                item.delete()
+                messages.success(request, f'{item.item_id}を{self.operation_text.get(operation)}しました')
+        elif operation == 'to_wowma':
+            wowma_api = WowmaApi(request.user.wowma_auth)
+            for item in item_list:
+                try:
+                    wowma_api.add_or_edit(item)
+                except Exception as e:
+                    messages.error(request, str(e))
+                else:
+                    messages.success(request, f'{item.item_id}を{self.operation_text.get(operation)}しました')
         return redirect('colorme:search')
 
 class Upload(LoginRequiredMixin, TemplateView):
